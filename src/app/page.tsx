@@ -1,30 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { AiUsageLeaderboard } from "@/components/ai-usage-leaderboard";
-import { DateRangeFilter } from "@/components/date-range-filter";
-import { DateRangeDisplay } from "@/components/date-range-display";
-import { DataLoading } from "@/components/data-loading";
-import { DataError } from "@/components/data-error";
-import { fetchLeaderboardData } from "@/lib/actions";
-import { calculateDateRange } from "@/lib/date-range-presets";
-import type { DateRange, LeaderboardEntry } from "@/types/cursor";
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { SummaryStats } from '@/components/summary-stats';
+import { DashboardCharts } from '@/components/dashboard-charts';
+import { DataLoading } from '@/components/data-loading';
+import { DataError } from '@/components/data-error';
+import { Button } from '@/components/ui/button';
+import { fetchLeaderboardData } from '@/lib/actions';
+import { calculateDateRange } from '@/lib/date-range-presets';
+import { ArrowRightIcon } from 'lucide-react';
+import type { LeaderboardEntry } from '@/types/cursor';
 
-export default function Page() {
-  // Use lazy initialization with proper date calculation
-  const [dateRange, setDateRange] = useState<DateRange>(() => 
-    calculateDateRange('30days')
-  );
+export default function DashboardPage() {
   const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Fetch data on mount with 30-day default
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       setError(null);
       
       try {
+        const dateRange = calculateDateRange('30days');
         const data = await fetchLeaderboardData(dateRange.startDate, dateRange.endDate);
         setLeaderboardData(data);
       } catch (err) {
@@ -35,42 +35,65 @@ export default function Page() {
     }
 
     fetchData();
-  }, [dateRange.startDate, dateRange.endDate]);
-
-  // Stable callback reference to prevent unnecessary re-renders
-  const handleRangeChange = useCallback((range: DateRange) => {
-    setDateRange(range);
   }, []);
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">AI Usage Leaderboard</h1>
-            <p className="text-muted-foreground mt-2">
-              Team members ranked by their AI activity score across all Cursor features
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Score calculation: Accepted Lines (2pts) + Tab Accepts (1pt) + Chat/Composer/Agent Requests (3pts each)
-            </p>
-          </div>
-          <div className="lg:w-[400px]">
-            <DateRangeFilter 
-              onRangeChange={handleRangeChange} 
-              defaultPreset="30days"
-            />
-          </div>
+    <div className="container mx-auto py-8 px-4 space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground">Last 30 days of AI activity</p>
         </div>
-
-        <DateRangeDisplay dateRange={dateRange} />
-
-        {loading && <DataLoading message="Loading leaderboard data..." />}
-        {error && <DataError error={error} title="Error loading leaderboard" />}
-        {!loading && !error && leaderboardData && (
-          <AiUsageLeaderboard entries={leaderboardData} />
-        )}
+        <Link href="/leaderboard" prefetch={true}>
+          <Button variant="outline" className="gap-2">
+            View Leaderboard
+            <ArrowRightIcon className="size-4" />
+          </Button>
+        </Link>
       </div>
+
+      {/* Summary Stats Section */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold">Team Overview</h2>
+        {loading ? (
+          <DataLoading message="Loading team statistics..." />
+        ) : error ? (
+          <DataError error={error} title="Error loading statistics" />
+        ) : leaderboardData ? (
+          <SummaryStats data={leaderboardData} />
+        ) : null}
+      </section>
+
+      {/* Charts Section */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold">Detailed Analytics</h2>
+        {loading ? (
+          <DataLoading message="Loading charts..." />
+        ) : error ? (
+          <DataError error={error} title="Error loading charts" />
+        ) : leaderboardData ? (
+          <DashboardCharts data={leaderboardData} />
+        ) : null}
+      </section>
+
+      {/* Quick Actions */}
+      <section className="py-6 border-t">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Want more details?</h3>
+            <p className="text-sm text-muted-foreground">
+              View the full leaderboard with sorting and date filtering
+            </p>
+          </div>
+          <Link href="/leaderboard" prefetch={true}>
+            <Button size="lg" className="gap-2">
+              Open Leaderboard
+              <ArrowRightIcon className="size-4" />
+            </Button>
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

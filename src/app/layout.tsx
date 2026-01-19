@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { NavHeader } from "@/components/nav-header";
 import "./globals.css";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
@@ -29,7 +30,12 @@ export default function RootLayout({
 			<head>
 				<link rel="icon" href="/favicon.svg" type="image/svg+xml"></link>
 			</head>
-			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+			<body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+				<NavHeader />
+				<main className="min-h-[calc(100vh-3.5rem)]">
+					{children}
+				</main>
+			</body>
 		</html>
 	);
 }
