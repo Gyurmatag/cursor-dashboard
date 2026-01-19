@@ -10,7 +10,6 @@ import {
   Pie,
   PieChart,
   Cell,
-  ResponsiveContainer,
 } from 'recharts';
 import {
   ChartContainer,
@@ -27,47 +26,47 @@ interface DashboardChartsProps {
   data: LeaderboardEntry[];
 }
 
-// Chart configurations - hoisted outside component
+// Chart configurations - direct hex values for SVG compatibility
 const activityChartConfig: ChartConfig = {
   chat: {
     label: 'Chat',
-    color: 'hsl(var(--chart-1))',
+    color: '#f87171',
   },
   composer: {
     label: 'Composer',
-    color: 'hsl(var(--chart-2))',
+    color: '#fb923c',
   },
   agent: {
     label: 'Agent',
-    color: 'hsl(var(--chart-3))',
+    color: '#4ade80',
   },
   tabs: {
     label: 'Tab Accepts',
-    color: 'hsl(var(--chart-4))',
+    color: '#60a5fa',
   },
 };
 
 const modelChartConfig: ChartConfig = {
   usage: {
     label: 'Usage',
-    color: 'hsl(var(--chart-1))',
+    color: '#f87171',
   },
 };
 
-// Pie chart colors
+// Pie chart colors - direct hex values for SVG compatibility
 const PIE_COLORS = [
-  'hsl(var(--chart-1))',
-  'hsl(var(--chart-2))',
-  'hsl(var(--chart-3))',
-  'hsl(var(--chart-4))',
-  'hsl(var(--chart-5))',
+  '#f87171', // red
+  '#fb923c', // orange
+  '#4ade80', // green
+  '#60a5fa', // blue
+  '#c084fc', // purple
 ];
 
-// Top performers chart config - hoisted outside component
+// Top performers chart config - direct hex for SVG compatibility
 const topPerformersConfig: ChartConfig = {
   score: {
     label: 'Activity Score',
-    color: 'hsl(var(--chart-1))',
+    color: '#f87171',
   },
 };
 
@@ -92,10 +91,10 @@ const ActivityBreakdownChart = React.memo(function ActivityBreakdownChart({
     }
 
     return [
-      { name: 'Chat', value: totalChat, fill: 'var(--color-chat)' },
-      { name: 'Composer', value: totalComposer, fill: 'var(--color-composer)' },
-      { name: 'Agent', value: totalAgent, fill: 'var(--color-agent)' },
-      { name: 'Tab Accepts', value: totalTabs, fill: 'var(--color-tabs)' },
+      { name: 'Chat', value: totalChat, fill: '#f87171' },
+      { name: 'Composer', value: totalComposer, fill: '#fb923c' },
+      { name: 'Agent', value: totalAgent, fill: '#4ade80' },
+      { name: 'Tab Accepts', value: totalTabs, fill: '#60a5fa' },
     ];
   }, [data]);
 
@@ -108,11 +107,28 @@ const ActivityBreakdownChart = React.memo(function ActivityBreakdownChart({
       <CardContent>
         <ChartContainer config={activityChartConfig} className="h-[300px] w-full">
           <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-            <XAxis type="number" tickFormatter={(value) => value.toLocaleString()} />
-            <YAxis type="category" dataKey="name" width={80} />
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              horizontal={true} 
+              vertical={false}
+              stroke="hsl(var(--border))"
+              opacity={0.3}
+            />
+            <XAxis 
+              type="number" 
+              tickFormatter={(value) => value.toLocaleString()}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            />
+            <YAxis 
+              type="category" 
+              dataKey="name" 
+              width={80}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fill: 'hsl(var(--foreground))' }}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="value" radius={[0, 4, 4, 0]} />
+            <Bar dataKey="value" radius={[0, 8, 8, 0]} />
           </BarChart>
         </ChartContainer>
       </CardContent>
@@ -164,7 +180,7 @@ const ModelUsageChart = React.memo(function ModelUsageChart({
               cy="50%"
               outerRadius={100}
               innerRadius={60}
-              paddingAngle={2}
+              paddingAngle={3}
               label={({ name, percent }) => 
                 `${name} (${(percent * 100).toFixed(0)}%)`
               }
@@ -173,7 +189,7 @@ const ModelUsageChart = React.memo(function ModelUsageChart({
               {chartData.map((_, index) => (
                 <Cell 
                   key={`cell-${index}`} 
-                  fill={PIE_COLORS[index % PIE_COLORS.length]} 
+                  fill={PIE_COLORS[index % PIE_COLORS.length]}
                 />
               ))}
             </Pie>
@@ -198,7 +214,7 @@ const TopPerformersChart = React.memo(function TopPerformersChart({
       .map((entry) => ({
         name: entry.name.split(' ')[0], // First name only for space
         score: entry.totalActivityScore,
-        fill: 'hsl(var(--chart-1))',
+        fill: '#f87171',
       }));
   }, [data]);
 
@@ -211,7 +227,12 @@ const TopPerformersChart = React.memo(function TopPerformersChart({
       <CardContent>
         <ChartContainer config={topPerformersConfig} className="h-[300px] w-full">
           <BarChart data={chartData} margin={{ bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid 
+              strokeDasharray="3 3" 
+              vertical={false}
+              stroke="hsl(var(--border))"
+              opacity={0.3}
+            />
             <XAxis 
               dataKey="name" 
               tickLine={false}
@@ -219,10 +240,20 @@ const TopPerformersChart = React.memo(function TopPerformersChart({
               angle={-45}
               textAnchor="end"
               height={60}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fill: 'hsl(var(--foreground))' }}
             />
-            <YAxis tickFormatter={(value) => value.toLocaleString()} />
+            <YAxis 
+              tickFormatter={(value) => value.toLocaleString()}
+              stroke="hsl(var(--muted-foreground))"
+              tick={{ fill: 'hsl(var(--muted-foreground))' }}
+            />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <Bar dataKey="score" radius={[4, 4, 0, 0]} fill="hsl(var(--chart-1))" />
+            <Bar 
+              dataKey="score" 
+              radius={[8, 8, 0, 0]} 
+              fill="#f87171"
+            />
           </BarChart>
         </ChartContainer>
       </CardContent>

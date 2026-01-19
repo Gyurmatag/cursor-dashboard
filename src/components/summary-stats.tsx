@@ -31,7 +31,7 @@ const statIcons = {
 } as const;
 
 // Hoist static card classes
-const cardClasses = "transition-all hover:shadow-md";
+const cardClasses = "transition-all hover:shadow-lg";
 
 interface StatCardProps {
   title: string;

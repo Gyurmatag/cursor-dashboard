@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { ThemeSwitcher } from '@/components/theme-switcher';
 import { LayoutDashboardIcon, TableIcon } from 'lucide-react';
 
 // Hoist static navigation items outside component
@@ -16,7 +17,7 @@ export function NavHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 items-center px-4">
+      <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Navigation - Left aligned */}
         <nav className="flex items-center space-x-8 text-sm font-medium">
           {navItems.map((item) => {
@@ -39,6 +40,9 @@ export function NavHeader() {
             );
           })}
         </nav>
+        
+        {/* Theme switcher - Right aligned */}
+        <ThemeSwitcher />
       </div>
     </header>
   );

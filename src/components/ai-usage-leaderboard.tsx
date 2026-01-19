@@ -59,7 +59,7 @@ const getRankBadge = (rank: number) => {
     return (
       <Badge 
         variant="default" 
-        className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 font-semibold shadow-sm gap-1.5"
+        className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-sm gap-1.5"
       >
         <TrophyIcon className="size-3.5" />
         {rank}
@@ -70,7 +70,7 @@ const getRankBadge = (rank: number) => {
     return (
       <Badge 
         variant="secondary" 
-        className="bg-slate-500 hover:bg-slate-600 text-white dark:bg-slate-600 dark:hover:bg-slate-700 font-semibold shadow-sm gap-1.5"
+        className="bg-secondary hover:bg-secondary/80 text-secondary-foreground font-semibold shadow-sm gap-1.5"
       >
         <TrophyIcon className="size-3.5" />
         {rank}
@@ -81,7 +81,7 @@ const getRankBadge = (rank: number) => {
     return (
       <Badge 
         variant="secondary" 
-        className="bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-700 dark:hover:bg-orange-800 font-semibold shadow-sm gap-1.5"
+        className="bg-accent hover:bg-accent/80 text-accent-foreground font-semibold shadow-sm gap-1.5"
       >
         <TrophyIcon className="size-3.5" />
         {rank}
