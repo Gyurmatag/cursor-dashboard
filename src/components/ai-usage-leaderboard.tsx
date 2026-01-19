@@ -57,7 +57,10 @@ const TooltipHeader = ({ children, tooltip }: { children: React.ReactNode; toolt
 const getRankBadge = (rank: number) => {
   if (rank === 1) {
     return (
-      <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-yellow-950 dark:text-yellow-50 gap-1.5">
+      <Badge 
+        variant="default" 
+        className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 font-semibold shadow-sm gap-1.5"
+      >
         <TrophyIcon className="size-3.5" />
         {rank}
       </Badge>
@@ -65,7 +68,10 @@ const getRankBadge = (rank: number) => {
   }
   if (rank === 2) {
     return (
-      <Badge variant="secondary" className="bg-gray-400 dark:bg-gray-500 hover:bg-gray-500 dark:hover:bg-gray-600 text-gray-950 dark:text-gray-50 gap-1.5">
+      <Badge 
+        variant="secondary" 
+        className="bg-slate-500 hover:bg-slate-600 text-white dark:bg-slate-600 dark:hover:bg-slate-700 font-semibold shadow-sm gap-1.5"
+      >
         <TrophyIcon className="size-3.5" />
         {rank}
       </Badge>
@@ -73,7 +79,10 @@ const getRankBadge = (rank: number) => {
   }
   if (rank === 3) {
     return (
-      <Badge variant="secondary" className="bg-orange-500 hover:bg-orange-600 text-orange-950 dark:text-orange-50 gap-1.5">
+      <Badge 
+        variant="secondary" 
+        className="bg-orange-600 hover:bg-orange-700 text-white dark:bg-orange-700 dark:hover:bg-orange-800 font-semibold shadow-sm gap-1.5"
+      >
         <TrophyIcon className="size-3.5" />
         {rank}
       </Badge>

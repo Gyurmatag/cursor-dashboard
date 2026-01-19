@@ -80,10 +80,10 @@ export const getDailyUsageData = cache(async (startDate: number, endDate: number
       throw new Error('API key not configured');
     }
 
-    // Validate date range (API limit is 90 days)
+    // Validate date range (API limit is 30 days)
     const daysDiff = (endDate - startDate) / (1000 * 60 * 60 * 24);
-    if (daysDiff > 90) {
-      throw new Error('Date range cannot exceed 90 days');
+    if (daysDiff > 30) {
+      throw new Error('Date range cannot exceed 30 days');
     }
 
     const response = await fetch('https://api.cursor.com/teams/daily-usage-data', {

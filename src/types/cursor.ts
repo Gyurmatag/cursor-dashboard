@@ -67,6 +67,26 @@ export interface DateRange {
   label: string;
 }
 
+export interface CustomDateRange {
+  from: Date;
+  to: Date;
+}
+
+// Date Range Preset Keys (max 30 days due to API limitation)
+export type PresetKey = 
+  | 'today'
+  | 'yesterday'
+  | '7days'
+  | '14days'
+  | '30days'
+  | '60days'
+  | '90days'
+  | 'mtd'
+  | 'lastMonth'
+  | 'qtd'
+  | 'ytd'
+  | 'custom';
+
 // Sort Types
 export type SortDirection = 'asc' | 'desc';
 export type LeaderboardSortKey = keyof LeaderboardEntry;
