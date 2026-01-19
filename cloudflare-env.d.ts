@@ -4,6 +4,7 @@
 declare namespace Cloudflare {
 	interface Env {
 		NEXTJS_ENV: string;
+		CURSOR_ADMIN_API_KEY: string;
 		WORKER_SELF_REFERENCE: Fetcher /* cursor-dashboard */;
 		IMAGES: ImagesBinding;
 		ASSETS: Fetcher;
