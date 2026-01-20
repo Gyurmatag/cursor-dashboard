@@ -434,18 +434,7 @@ export default function ChatPage() {
   const isReady = !isStreaming;
 
   return (
-    <div className="container mx-auto max-w-6xl p-6 h-[calc(100vh-4rem)] flex flex-col gap-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-3 mb-2">
-          <PulseIcon className="w-8 h-8 text-primary" animated />
-          <h1 className="text-3xl font-bold tracking-tight">Pulse</h1>
-        </div>
-        <p className="text-muted-foreground">
-          Your intelligent assistant for team insights, productivity metrics, and AI usage analytics
-        </p>
-      </div>
-
+    <div className="container mx-auto max-w-6xl p-6 h-[calc(100vh-4rem)] flex flex-col">
       {/* Chat Container */}
       <Card className="flex-1 flex flex-col overflow-hidden">
         {/* Messages Area */}
