@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { createDb, dailySnapshots } from '@/db';
 import { runFullBackfill } from '@/lib/achievement-sync';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function POST(_request: NextRequest) {
+export async function POST() {
   try {
     const { env } = await getCloudflareContext();
     const db = createDb(env.DB);
