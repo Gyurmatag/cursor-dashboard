@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import type { Database } from '@/db';
 import {
   userStats,
@@ -134,6 +134,19 @@ export async function runIncrementalSync(
     // Process the data
     const result = await processUsageData(db, usageData);
 
+    // Query oldest data date for the 30-day rolling window
+    const oldestDataDate = await getOldestDataDate(db);
+
+    // Get existing metadata to preserve dataCollectionStartDate
+    let dataCollectionStartDate: string | null = null;
+    if (kv) {
+      const existingMeta = await getSyncMetadata(kv);
+      dataCollectionStartDate = existingMeta?.dataCollectionStartDate ?? oldestDataDate;
+    } else {
+      const meta = await db.select().from(syncMetadata).where(eq(syncMetadata.id, 'sync'));
+      dataCollectionStartDate = meta[0]?.dataCollectionStartDate ?? oldestDataDate;
+    }
+
     // Update sync metadata (both KV and D1 for transition period)
     if (kv) {
       await updateSyncMetadata(kv, {
@@ -141,6 +154,8 @@ export async function runIncrementalSync(
         lastSyncAt: new Date().toISOString(),
         lastSyncDate: yesterday,
         errorMessage: null,
+        dataCollectionStartDate,
+        oldestDataDate,
       });
     }
     await db
@@ -191,10 +206,15 @@ export async function runIncrementalSync(
 
 /**
  * Run a full backfill - fetch all historical data (up to 30 days due to API limit)
+ * 
+ * @param db - D1 Database instance
+ * @param apiKey - Cursor API key
+ * @param kv - Optional KV namespace for metadata
  */
 export async function runFullBackfill(
   db: Database,
-  apiKey: string
+  apiKey: string,
+  kv?: KVNamespace
 ): Promise<SyncResult> {
   try {
     // Calculate date range (30 days max due to Cursor API limit)
@@ -215,6 +235,10 @@ export async function runFullBackfill(
     // Process the data
     const result = await processUsageData(db, usageData);
 
+    // Query oldest data date - this is the collection start date for backfill
+    const oldestDataDate = await getOldestDataDate(db);
+    const dataCollectionStartDate = oldestDataDate; // For backfill, oldest = start date
+
     // Initialize sync metadata
     const yesterday = getYesterday();
     await db
@@ -233,6 +257,18 @@ export async function runFullBackfill(
           syncStatus: 'idle',
         },
       });
+
+    // Update KV metadata if available
+    if (kv) {
+      await updateSyncMetadata(kv, {
+        syncStatus: 'idle',
+        lastSyncAt: new Date().toISOString(),
+        lastSyncDate: yesterday,
+        dataCollectionStartDate,
+        oldestDataDate,
+        errorMessage: null,
+      });
+    }
 
     return {
       success: true,
@@ -347,4 +383,22 @@ function getYesterday(): string {
   const date = new Date();
   date.setDate(date.getDate() - 1);
   return date.toISOString().split('T')[0];
+}
+
+/**
+ * Query the oldest data date from dailySnapshots
+ */
+async function getOldestDataDate(db: Database): Promise<string | null> {
+  try {
+    const oldest = await db
+      .select({ date: dailySnapshots.date })
+      .from(dailySnapshots)
+      .orderBy(asc(dailySnapshots.date))
+      .limit(1);
+    
+    return oldest.length > 0 ? oldest[0].date : null;
+  } catch (error) {
+    console.error('Failed to query oldest data date:', error);
+    return null;
+  }
 }

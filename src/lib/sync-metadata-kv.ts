@@ -5,6 +5,8 @@
  * for fast, globally distributed access and distributed locking.
  */
 
+import { cache } from 'react';
+
 // ============================================================================
 // Types
 // ============================================================================
@@ -14,6 +16,8 @@ export interface SyncMetadata {
   lastSyncDate: string | null; // YYYY-MM-DD format
   syncStatus: 'idle' | 'running' | 'error';
   errorMessage: string | null;
+  dataCollectionStartDate: string | null; // YYYY-MM-DD - Date when tracking first started (never changes)
+  oldestDataDate: string | null; // YYYY-MM-DD - Oldest available data (for 30-day rolling window)
   lastSyncResult?: {
     processed: number;
     newAchievements: {
@@ -42,9 +46,9 @@ const MIN_SYNC_INTERVAL_MS = 50 * 60 * 1000; // 50 minutes
 // ============================================================================
 
 /**
- * Get sync metadata from KV
+ * Get sync metadata from KV (internal implementation)
  */
-export async function getSyncMetadata(
+async function getSyncMetadataInternal(
   kv: KVNamespace
 ): Promise<SyncMetadata | null> {
   try {
@@ -55,6 +59,12 @@ export async function getSyncMetadata(
     return null;
   }
 }
+
+/**
+ * Get sync metadata from KV with React.cache() for per-request deduplication
+ * React best practice: server-cache-react
+ */
+export const getSyncMetadata = cache(getSyncMetadataInternal);
 
 /**
  * Update sync metadata in KV
@@ -73,6 +83,8 @@ export async function updateSyncMetadata(
       lastSyncDate: metadata.lastSyncDate ?? existing?.lastSyncDate ?? null,
       syncStatus: metadata.syncStatus ?? existing?.syncStatus ?? 'idle',
       errorMessage: metadata.errorMessage ?? existing?.errorMessage ?? null,
+      dataCollectionStartDate: metadata.dataCollectionStartDate ?? existing?.dataCollectionStartDate ?? null,
+      oldestDataDate: metadata.oldestDataDate ?? existing?.oldestDataDate ?? null,
       lastSyncResult: metadata.lastSyncResult ?? existing?.lastSyncResult,
     };
 
@@ -226,6 +238,8 @@ export async function getSyncStatus(kv: KVNamespace): Promise<{
   lastSyncAt: string | null;
   lastSyncDate: string | null;
   errorMessage: string | null;
+  dataCollectionStartDate: string | null;
+  oldestDataDate: string | null;
   isLocked: boolean;
 }> {
   const metadata = await getSyncMetadata(kv);
@@ -236,6 +250,8 @@ export async function getSyncStatus(kv: KVNamespace): Promise<{
     lastSyncAt: metadata?.lastSyncAt ?? null,
     lastSyncDate: metadata?.lastSyncDate ?? null,
     errorMessage: metadata?.errorMessage ?? null,
+    dataCollectionStartDate: metadata?.dataCollectionStartDate ?? null,
+    oldestDataDate: metadata?.oldestDataDate ?? null,
     isLocked: locked,
   };
 }

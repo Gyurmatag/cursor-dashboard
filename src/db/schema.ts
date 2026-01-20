@@ -100,6 +100,8 @@ export const syncMetadata = sqliteTable('sync_metadata', {
   lastSyncDate: text('last_sync_date'), // YYYY-MM-DD of last processed day
   syncStatus: text('sync_status').default('idle').notNull(), // 'idle' | 'running' | 'error'
   errorMessage: text('error_message'),
+  dataCollectionStartDate: text('data_collection_start_date'), // YYYY-MM-DD - Date when tracking first started
+  oldestDataDate: text('oldest_data_date'), // YYYY-MM-DD - Oldest available data (30-day rolling window)
 });
 
 // ============================================================================

@@ -4,8 +4,8 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { createDb, userAchievements, teamAchievements, userStats, teamStats, syncMetadata } from '@/db';
 import { AchievementGrid } from '@/components/achievement-grid';
 import { AchievementSectionBadge } from '@/components/achievement-section-badge';
-import { RefreshButton } from './refresh-button';
 import { NotInPlanBanner } from '@/components/not-in-plan-banner';
+import { DataCollectionInfo } from '@/components/data-collection-info';
 import { SignInPrompt } from './sign-in-prompt';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,9 +49,13 @@ export default function AchievementsPage() {
             <Suspense fallback={<Skeleton className="h-10 w-32 rounded-lg" />}>
               <LastSyncInfo />
             </Suspense>
-            <RefreshButton />
           </div>
         </div>
+
+        {/* Data Collection Info Banner */}
+        <Suspense fallback={<Skeleton className="h-24 w-full rounded-lg" />}>
+          <DataCollectionInfoSection />
+        </Suspense>
 
         {/* Achievements Tabs */}
         <AchievementsTabs
@@ -60,6 +64,23 @@ export default function AchievementsPage() {
         />
       </div>
     </div>
+  );
+}
+
+// Data collection info section - shows tracking period and limitations
+async function DataCollectionInfoSection() {
+  const { env } = await getCloudflareContext();
+  const kv = env.SYNC_KV;
+
+  // Fetch metadata from KV
+  const metadata = kv ? await getSyncMetadata(kv) : null;
+
+  // Pass only needed fields to client component (React best practice - minimize serialization)
+  return (
+    <DataCollectionInfo
+      startDate={metadata?.dataCollectionStartDate ?? null}
+      oldestDataDate={metadata?.oldestDataDate ?? null}
+    />
   );
 }
 
@@ -156,14 +177,16 @@ async function LastSyncInfo() {
   const kv = env.SYNC_KV;
   const db = createDb(env.DB);
 
-  // Try to get sync metadata from KV first, fallback to D1
+  // Parallel fetching (React best practice - async-parallel)
   let lastSyncAt: Date | null = null;
+  let dataCollectionStartDate: string | null = null;
   
   if (kv) {
     const kvMeta = await getSyncMetadata(kv);
     if (kvMeta?.lastSyncAt) {
       lastSyncAt = new Date(kvMeta.lastSyncAt);
     }
+    dataCollectionStartDate = kvMeta?.dataCollectionStartDate ?? null;
   }
   
   // Fallback to D1 if KV didn't have data
@@ -173,19 +196,46 @@ async function LastSyncInfo() {
     lastSyncAt = syncData?.lastSyncAt ?? null;
   }
 
+  // Calculate next sync time (hourly at minute 0)
+  const nextSyncTime = lastSyncAt 
+    ? (() => {
+        const next = new Date(lastSyncAt);
+        next.setHours(next.getHours() + 1);
+        next.setMinutes(0);
+        next.setSeconds(0);
+        next.setMilliseconds(0);
+        return next;
+      })()
+    : null;
+
+  // Explicit conditional rendering (React best practice)
   if (!lastSyncAt) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <ClockIcon className="size-4" />
-        <span>Never synced</span>
+      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <ClockIcon className="size-4" />
+          <span>Never synced</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-      <ClockIcon className="size-4" />
-      <span>Last sync: {format(lastSyncAt, 'MMM d, HH:mm')}</span>
+    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2">
+        <ClockIcon className="size-4" />
+        <span>Last sync: {format(lastSyncAt, 'MMM d, HH:mm')}</span>
+      </div>
+      {nextSyncTime ? (
+        <div className="flex items-center gap-2 pl-6">
+          <span>Next sync: {format(nextSyncTime, 'MMM d, HH:mm')}</span>
+        </div>
+      ) : null}
+      {dataCollectionStartDate ? (
+        <div className="flex items-center gap-2 pl-6">
+          <span>Tracking since: {format(new Date(dataCollectionStartDate), 'MMM d, yyyy')}</span>
+        </div>
+      ) : null}
     </div>
   );
 }
