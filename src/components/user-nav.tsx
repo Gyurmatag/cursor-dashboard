@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { signIn, signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { LogInIcon, LogOutIcon, UserIcon, Loader2Icon } from 'lucide-react';
@@ -72,9 +73,11 @@ export function UserNav({ user }: UserNavProps) {
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
         {user.image ? (
-          <img
+          <Image
             src={user.image}
             alt={user.name}
+            width={32}
+            height={32}
             className="size-8 rounded-full"
           />
         ) : (

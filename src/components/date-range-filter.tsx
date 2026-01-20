@@ -14,8 +14,7 @@ import { CalendarIcon, XIcon } from 'lucide-react';
 import type { DateRange, PresetKey } from '@/types/cursor';
 import type { DateRange as DayPickerDateRange } from 'react-day-picker';
 import { 
-  calculateDateRange,
-  DATE_PRESET_CONFIG 
+  calculateDateRange
 } from '@/lib/date-range-presets';
 import { 
   doesRangeExceedMax, 

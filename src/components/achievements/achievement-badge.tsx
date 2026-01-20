@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import { cn } from '@/lib/utils';
-import type { Achievement, AchievementTier, BadgeShape } from '@/lib/achievements';
+import type { Achievement, AchievementTier } from '@/lib/achievements';
 import { BadgeGradients } from './badge-gradients';
 import { BadgeBackground, BadgeRing } from './badge-shapes';
 import { BadgeIcon } from './badge-icon';

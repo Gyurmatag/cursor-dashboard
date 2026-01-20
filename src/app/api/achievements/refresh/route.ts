@@ -7,7 +7,8 @@ import { runIncrementalSync } from '@/lib/achievement-sync';
 // Rate limit: 1 refresh per 5 minutes
 const RATE_LIMIT_SECONDS = 300;
 
-export async function POST(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function POST(_request: NextRequest) {
   try {
     const { env } = await getCloudflareContext();
     const db = createDb(env.DB);

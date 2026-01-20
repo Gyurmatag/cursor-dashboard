@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { SendIcon, BotIcon, UserIcon, Loader2Icon, StopCircleIcon } from 'lucide-react';
+import { SendIcon, BotIcon, UserIcon, StopCircleIcon } from 'lucide-react';
 import type { UIMessage } from 'ai';
 
 // Memoized message component to prevent unnecessary re-renders
@@ -58,9 +58,7 @@ MessageBubble.displayName = 'MessageBubble';
 
 export default function ChatPage() {
   const [inputValue, setInputValue] = useState('');
-  const { messages, sendMessage, status, error, stop } = useChat({
-    api: '/api/chat',
-  });
+  const { messages, sendMessage, status, error, stop } = useChat();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

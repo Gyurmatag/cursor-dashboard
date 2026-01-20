@@ -34,7 +34,6 @@ export async function POST(req: Request) {
       messages: await convertToModelMessages(messages),
       system: 'You are a helpful assistant for the Cursor AI Usage Dashboard. You help users understand their team\'s AI usage metrics and can answer questions about productivity, coding assistance, and AI-powered development workflows.',
       temperature: 0.7,
-      maxTokens: 2000,
     });
     
     return result.toUIMessageStreamResponse({

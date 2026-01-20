@@ -1,8 +1,7 @@
-import { eq, and, desc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Database } from '@/db';
 import {
   userStats,
-  teamStats,
   userAchievements,
   teamAchievements,
   dailySnapshots,
@@ -13,7 +12,6 @@ import {
 import {
   INDIVIDUAL_ACHIEVEMENTS,
   TEAM_ACHIEVEMENTS,
-  type Achievement,
 } from './achievements';
 
 // ============================================================================
