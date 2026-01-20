@@ -37,7 +37,7 @@ export function ProfileStatsSummary({
     {
       title: 'Activity Score',
       value: leaderboardEntry?.totalActivityScore.toLocaleString() || '0',
-      description: 'Complete history (90 days)',
+      description: 'All time (since inception)',
       icon: TrendingUpIcon,
       color: 'text-blue-500',
     },

@@ -99,9 +99,14 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
     const { env } = await getCloudflareContext();
     const db = createDb(env.DB);
 
-    // Calculate 90 days date range to show complete historical activity
-    // Smart fetching: API for ≤30 days, Database for >30 days (see fetchLeaderboardData)
-    const dateRange = calculateDateRange('90days');
+    // Calculate ALL TIME date range from account inception
+    // Smart fetching: Database for complete historical activity
+    const ACCOUNT_INCEPTION = new Date('2025-06-16T00:00:00Z').getTime();
+    const dateRange = {
+      startDate: ACCOUNT_INCEPTION,
+      endDate: Date.now(),
+      label: 'All Time (Since Inception)',
+    };
 
     // React best practice: Parallel fetching with Promise.all()
     // Fetch data from appropriate source (API or Database) and achievements in parallel
@@ -232,10 +237,9 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
       updatedAt: new Date(),
     };
 
-    // Transform daily data to snapshot format (most recent first, up to 90 days)
+    // Transform daily data to snapshot format (most recent first, all time)
     const dailySnapshotsData = userDailyData
       .sort((a, b) => b.date - a.date)
-      .slice(0, 90)
       .map(record => ({
         id: `${userEmail}-${record.date}`,
         userEmail,
