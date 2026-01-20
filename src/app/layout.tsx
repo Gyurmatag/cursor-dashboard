@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { NavHeader } from "@/components/nav-header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthError } from "@/components/auth-error";
+import { BugReportButton } from "@/components/bug-report-button";
 import "./globals.css";
 
 // Force dynamic rendering for all pages since NavHeader needs session
@@ -24,6 +25,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "Cursor AI Usage Dashboard",
 	description: "Track and analyze team AI activity scores across all Cursor features including accepted lines, tab accepts, and chat requests",
+};
+
+export const viewport: Viewport = {
+	width: 'device-width',
+	initialScale: 1,
+	maximumScale: 5,
+	userScalable: true,
 };
 
 export default function RootLayout({
@@ -51,6 +59,8 @@ export default function RootLayout({
 					<main className="min-h-[calc(100vh-3.5rem)]">
 						{children}
 					</main>
+					{/* Floating bug report button - appears on all pages */}
+					<BugReportButton />
 				</ThemeProvider>
 			</body>
 		</html>

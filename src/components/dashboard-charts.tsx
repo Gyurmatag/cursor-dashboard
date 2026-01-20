@@ -106,7 +106,7 @@ const ActivityBreakdownChart = React.memo(function ActivityBreakdownChart({
         <CardDescription>Total requests by type across all team members</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={activityChartConfig} className="h-[300px] w-full">
+        <ChartContainer config={activityChartConfig} className="h-[250px] sm:h-[300px] w-full">
           <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
             <CartesianGrid 
               strokeDasharray="3 3" 
@@ -170,7 +170,7 @@ const ModelUsageChart = React.memo(function ModelUsageChart({
         <CardDescription>Most frequently used AI models by team</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={modelChartConfig} className="h-[300px] w-full">
+        <ChartContainer config={modelChartConfig} className="h-[250px] sm:h-[300px] w-full">
           <PieChart>
             <ChartTooltip content={<ChartTooltipContent />} />
             <Pie
@@ -226,7 +226,7 @@ const TopPerformersChart = React.memo(function TopPerformersChart({
         <CardDescription>Team members with highest activity scores</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={topPerformersConfig} className="h-[300px] w-full">
+        <ChartContainer config={topPerformersConfig} className="h-[250px] sm:h-[300px] w-full">
           <BarChart data={chartData} margin={{ bottom: 20 }}>
             <CartesianGrid 
               strokeDasharray="3 3" 
@@ -268,7 +268,7 @@ export const DashboardCharts = React.memo(function DashboardCharts({
 }: DashboardChartsProps) {
   // Early return with ternary
   return data && data.length > 0 ? (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
       <ActivityBreakdownChart data={data} />
       <ModelUsageChart data={data} />
       <TopPerformersChart data={data} />

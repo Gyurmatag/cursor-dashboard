@@ -46,14 +46,15 @@ export default function LeaderboardPage() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="space-y-6">
+    <div className="container mx-auto py-6 sm:py-8 px-4">
+      <div className="space-y-4 sm:space-y-6">
         {/* Breadcrumb / Back Navigation */}
         <div>
           <Link href="/" prefetch={true}>
             <Button variant="ghost" size="sm" className="gap-2 -ml-2">
               <ArrowLeftIcon className="size-4" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </Button>
           </Link>
         </div>
@@ -61,15 +62,15 @@ export default function LeaderboardPage() {
         {/* Header */}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex-1">
-            <h1 className="text-3xl font-bold tracking-tight">AI Usage Leaderboard</h1>
-            <p className="text-muted-foreground mt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">AI Usage Leaderboard</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               Team members ranked by their AI activity score across all Cursor features
             </p>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Score calculation: Accepted Lines (2pts) + Tab Accepts (1pt) + Chat/Composer/Agent Requests (3pts each)
             </p>
           </div>
-          <div className="lg:w-[400px]">
+          <div className="w-full lg:w-[400px]">
             <DateRangeFilter 
               onRangeChange={handleRangeChange} 
               defaultPreset="30days"

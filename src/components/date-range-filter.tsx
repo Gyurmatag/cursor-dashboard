@@ -130,7 +130,7 @@ export function DateRangeFilter({
         <Label className="text-sm font-medium">Quick Select</Label>
         <div className="space-y-2">
           {PRESET_GROUPS.map((group, groupIndex) => (
-            <div key={groupIndex} className="grid grid-cols-4 gap-2">
+            <div key={groupIndex} className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {group.map((preset) => (
                 <Button
                   key={preset.key}
@@ -191,9 +191,19 @@ export function DateRangeFilter({
                 mode="range"
                 selected={customDateRange}
                 onSelect={handleCustomDateSelect}
+                numberOfMonths={1}
+                defaultMonth={customDateRange?.from}
+                disabled={(date) => date > new Date()}
+                className="sm:hidden"
+              />
+              <Calendar
+                mode="range"
+                selected={customDateRange}
+                onSelect={handleCustomDateSelect}
                 numberOfMonths={2}
                 defaultMonth={customDateRange?.from}
                 disabled={(date) => date > new Date()}
+                className="hidden sm:block"
               />
               {customDateRange?.from && (
                 <div className="space-y-2 pt-2 border-t">

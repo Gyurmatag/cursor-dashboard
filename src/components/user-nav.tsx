@@ -64,7 +64,8 @@ export function UserNav({ user }: UserNavProps) {
         ) : (
           <LogInIcon className="size-4" />
         )}
-        Sign in with Google
+        <span className="hidden sm:inline">Sign in with Google</span>
+        <span className="sm:hidden">Sign in</span>
       </Button>
     );
   }

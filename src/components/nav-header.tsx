@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
 import { NavLinks } from '@/components/nav-links';
+import { MobileNav } from '@/components/mobile-nav';
 import { UserNav } from '@/components/user-nav';
 import { getSession } from '@/lib/auth-server';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,11 +23,18 @@ export async function NavHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        {/* Navigation - Left aligned */}
-        <NavLinks />
+        {/* Mobile hamburger menu - visible on mobile only */}
+        <div className="flex items-center gap-3 md:hidden">
+          <MobileNav />
+        </div>
+        
+        {/* Desktop Navigation - hidden on mobile */}
+        <div className="hidden md:flex">
+          <NavLinks variant="desktop" />
+        </div>
         
         {/* Right side - User nav and theme switcher */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4 ml-auto">
           <Suspense fallback={<Skeleton className="h-8 w-32 rounded" />}>
             <UserNav user={user} />
           </Suspense>

@@ -159,7 +159,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="totalActivityScore" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('acceptedLinesAdded')}
               >
                 <TooltipHeader tooltip="Total lines of AI-generated code that were accepted and kept">
@@ -168,7 +168,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="acceptedLinesAdded" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('chatRequests')}
               >
                 <TooltipHeader tooltip="Number of chat requests made to Cursor AI">
@@ -177,7 +177,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="chatRequests" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('composerRequests')}
               >
                 <TooltipHeader tooltip="Number of composer mode requests for multi-file edits">
@@ -186,7 +186,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="composerRequests" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('agentRequests')}
               >
                 <TooltipHeader tooltip="Number of agent mode requests for autonomous tasks">
@@ -195,7 +195,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="agentRequests" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('totalTabsAccepted')}
               >
                 <TooltipHeader tooltip="Number of tab completions accepted while typing">
@@ -204,7 +204,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="totalTabsAccepted" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden md:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('acceptanceRate')}
               >
                 <TooltipHeader tooltip="Percentage of AI suggestions that were accepted vs rejected">
@@ -213,7 +213,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="acceptanceRate" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors text-right"
+                className="hidden md:table-cell cursor-pointer hover:bg-muted/50 transition-colors text-right"
                 onClick={() => handleSort('activeDaysCount')}
               >
                 <TooltipHeader tooltip="Number of days with recorded AI usage activity">
@@ -222,7 +222,7 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <SortIcon columnKey="activeDaysCount" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
               <TableHead 
-                className="cursor-pointer hover:bg-muted/50 transition-colors min-w-[140px]"
+                className="hidden md:table-cell cursor-pointer hover:bg-muted/50 transition-colors min-w-[140px]"
                 onClick={() => handleSort('mostUsedModel')}
               >
                 <TooltipHeader tooltip="AI model used most frequently by this user">
@@ -249,28 +249,28 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 <TableCell className="font-mono font-semibold">
                   {formatNumber(entry.totalActivityScore)}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden sm:table-cell text-right font-mono">
                   {formatNumber(entry.acceptedLinesAdded)}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden sm:table-cell text-right font-mono">
                   {formatNumber(entry.chatRequests)}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden sm:table-cell text-right font-mono">
                   {formatNumber(entry.composerRequests)}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden sm:table-cell text-right font-mono">
                   {formatNumber(entry.agentRequests)}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden sm:table-cell text-right font-mono">
                   {formatNumber(entry.totalTabsAccepted)}
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden md:table-cell text-right font-mono">
                   {entry.acceptanceRate.toFixed(1)}%
                 </TableCell>
-                <TableCell className="text-right font-mono">
+                <TableCell className="hidden md:table-cell text-right font-mono">
                   {entry.activeDaysCount}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <Badge variant="outline" className="font-mono text-xs">
                     {entry.mostUsedModel}
                   </Badge>

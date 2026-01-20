@@ -70,14 +70,6 @@ export function AchievementGrid({
     return map;
   }, [teamAchievements]);
 
-  // Check if achievement was earned recently (last 24 hours)
-  const isNewAchievement = (achievedAt: Date | undefined): boolean => {
-    if (!achievedAt) return false;
-    const now = new Date();
-    const diff = now.getTime() - achievedAt.getTime();
-    return diff < 24 * 60 * 60 * 1000;
-  };
-
   // Calculate progress for achievements
   const calculateProgress = (achievement: Achievement): number => {
     if (type === 'individual' && userStats) {
@@ -153,7 +145,6 @@ export function AchievementGrid({
                     isUnlocked={isUnlocked}
                     achievedAt={achievedAt}
                     progress={progress}
-                    isNew={isNewAchievement(achievedAt)}
                   />
                 );
               })}

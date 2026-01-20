@@ -2,19 +2,20 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { createDb, userAchievements, teamAchievements, userStats, teamStats, syncMetadata } from '@/db';
-import { AchievementGrid, AchievementGridSkeleton } from '@/components/achievement-grid';
+import { AchievementGrid } from '@/components/achievement-grid';
 import { AchievementSectionBadge } from '@/components/achievement-section-badge';
 import { RefreshButton } from './refresh-button';
 import { NotInPlanBanner } from '@/components/not-in-plan-banner';
 import { SignInPrompt } from './sign-in-prompt';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeftIcon, TrophyIcon, ClockIcon, UsersIcon, UserIcon } from 'lucide-react';
+import { ArrowLeftIcon, TrophyIcon, ClockIcon, UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { getSession } from '@/lib/auth-server';
 import { INDIVIDUAL_ACHIEVEMENTS } from '@/lib/achievements';
 import { getSyncMetadata } from '@/lib/sync-metadata-kv';
 import { eq } from 'drizzle-orm';
+import { AchievementsTabs } from './achievements-tabs';
 
 // Force dynamic rendering since we need to access D1 database
 export const dynamic = 'force-dynamic';
@@ -52,28 +53,11 @@ export default function AchievementsPage() {
           </div>
         </div>
 
-        {/* Team Achievements Section - Always visible */}
-        <section className="space-y-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <UsersIcon className="size-6 text-muted-foreground" />
-                <h2 className="text-2xl font-semibold">Team Achievements</h2>
-              </div>
-              <AchievementSectionBadge accessLevel="public" />
-            </div>
-          </div>
-          <Suspense fallback={<AchievementGridSkeleton />}>
-            <TeamAchievementsContent />
-          </Suspense>
-        </section>
-
-        {/* Personal Achievements Section - Requires authentication */}
-        <section className="space-y-4 pt-4 border-t">
-          <Suspense fallback={<AchievementGridSkeleton />}>
-            <PersonalAchievementsContent />
-          </Suspense>
-        </section>
+        {/* Achievements Tabs */}
+        <AchievementsTabs
+          teamContent={<TeamAchievementsContent />}
+          personalContent={<PersonalAchievementsContent />}
+        />
       </div>
     </div>
   );
@@ -122,7 +106,7 @@ async function PersonalAchievementsContent() {
   // Show sign-in prompt if not authenticated
   if (!userEmail) {
     return (
-      <div className="space-y-4">
+      <>
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -133,7 +117,7 @@ async function PersonalAchievementsContent() {
           </div>
         </div>
         <SignInPrompt variant="inline" achievementCount={INDIVIDUAL_ACHIEVEMENTS.length} />
-      </div>
+      </>
     );
   }
 
@@ -143,7 +127,7 @@ async function PersonalAchievementsContent() {
   const filteredUserAchievements = userAchievementsData.filter((a) => a.userEmail === userEmail);
 
   return (
-    <div className="space-y-4">
+    <>
       <div className="flex items-center justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center gap-3">
@@ -163,7 +147,7 @@ async function PersonalAchievementsContent() {
         userStats={currentUserStats ?? null}
         selectedUser={userEmail}
       />
-    </div>
+    </>
   );
 }
 
