@@ -197,3 +197,99 @@
 .animate-particle {
   animation: particle-float 2s ease-in-out infinite;
 }
+
+/* Pulse Wave Animation for Pulse Icon */
+@keyframes pulse-wave {
+  0%, 100% {
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dashoffset: 20;
+  }
+}
+
+.animate-pulse-wave {
+  stroke-dasharray: 40 20;
+  animation: pulse-wave 1.5s ease-in-out infinite;
+}
+
+/* Syntax Highlighting for Code Blocks */
+.hljs {
+  @apply bg-transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  @apply text-muted-foreground italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-subst {
+  @apply text-primary font-semibold;
+}
+
+.hljs-number,
+.hljs-literal,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag .hljs-attr {
+  @apply text-chart-4;
+}
+
+.hljs-string,
+.hljs-doctag {
+  @apply text-chart-3;
+}
+
+.hljs-title,
+.hljs-section,
+.hljs-selector-id {
+  @apply text-chart-2 font-semibold;
+}
+
+.hljs-type,
+.hljs-class .hljs-title {
+  @apply text-chart-5 font-semibold;
+}
+
+.hljs-tag,
+.hljs-name,
+.hljs-attribute {
+  @apply text-chart-1;
+}
+
+.hljs-regexp,
+.hljs-link {
+  @apply text-chart-3;
+}
+
+.hljs-symbol,
+.hljs-bullet {
+  @apply text-primary;
+}
+
+.hljs-built_in,
+.hljs-builtin-name {
+  @apply text-chart-4;
+}
+
+.hljs-meta {
+  @apply text-muted-foreground;
+}
+
+.hljs-deletion {
+  @apply bg-destructive/20;
+}
+
+.hljs-addition {
+  @apply bg-chart-3/20;
+}
+
+.hljs-emphasis {
+  @apply italic;
+}
+
+.hljs-strong {
+  @apply font-bold;
+}

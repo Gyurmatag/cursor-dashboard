@@ -1,5 +1,6 @@
 'use client';
 
+import { useChat } from '@ai-sdk/react';
 import { useRef, useEffect, useState, useCallback, memo, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,11 +18,10 @@ import {
   UsersIcon,
 } from 'lucide-react';
 import { PulseIcon } from '@/components/chat/pulse-icon';
-import { LeaderboardCard, AchievementDisplay, UserProfileCard } from '@/components/chat';
+import { LeaderboardCard, AchievementDisplay } from '@/components/chat';
 import { ToolResultErrorBoundary } from '@/components/chat/error-boundary';
-import { Response } from '@/components/ai-elements/response';
 import type { UIMessage } from 'ai';
-import type { LeaderboardResult, AchievementResult, UserProfileResult } from '@/types/chat';
+import type { LeaderboardResult, AchievementResult } from '@/types/chat';
 
 const SUGGESTED_PROMPTS = [
   { icon: TrophyIcon, label: 'Top 3 AI Users', prompt: 'Show me the top 3 AI users this week' },
@@ -103,7 +103,7 @@ const MessageBubble = memo(({ message }: { message: UIMessage }) => {
       
       <div className={cn('max-w-[85%] space-y-3', !isUser && hasToolInvocations && 'max-w-[90%]')}>
         {/* Text content */}
-        {message.parts.some(p => p.type === 'text' && p.text !== '[Data retrieved]') && (
+        {message.parts.some(p => p.type === 'text') && (
           <div
             className={cn(
               'rounded-2xl px-4 py-3 relative',
@@ -113,15 +113,11 @@ const MessageBubble = memo(({ message }: { message: UIMessage }) => {
             )}
           >
             {message.parts.map((part, index) => {
-              if (part.type === 'text' && part.text !== '[Data retrieved]') {
-                return isUser ? (
+              if (part.type === 'text') {
+                return (
                   <p key={index} className="whitespace-pre-wrap break-words">
                     {part.text}
                   </p>
-                ) : (
-                  <Response key={index}>
-                    {part.text}
-                  </Response>
                 );
               }
               return null;
@@ -164,11 +160,7 @@ const MessageBubble = memo(({ message }: { message: UIMessage }) => {
                     return <AchievementDisplay data={result as AchievementResult} />;
                   }
 
-                  if (toolName === 'getUserProfile' && result && typeof result === 'object' && 'user' in result) {
-                    return <UserProfileCard data={result as UserProfileResult} />;
-                  }
-
-                  // Fallback for other tools
+                  // Fallback for other tools or if result doesn't match expected format
                   return (
                     <Card className="p-4">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
@@ -201,10 +193,7 @@ MessageBubble.displayName = 'MessageBubble';
 
 export default function ChatPage() {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<UIMessage[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const { messages, sendMessage, status, error, stop } = useChat();
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -240,198 +229,37 @@ export default function ChatPage() {
     }
   }, [input]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    const userMessage: UIMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      parts: [{ type: 'text', text }],
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setIsStreaming(true);
-    setError(null);
-    
-    // Create abort controller
-    abortControllerRef.current = new AbortController();
-    
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-        signal: abortControllerRef.current.signal,
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      
-      const aiMessage: UIMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        parts: [],
-      };
-      
-      // Add AI message placeholder immediately
-      setMessages(prev => [...prev, aiMessage]);
-      const messageIndex = messages.length + 1; // Position of AI message in current state
-      const toolCallMap = new Map<string, string>(); // toolCallId -> toolName
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          
-          try {
-            const event = JSON.parse(data);
-            
-            if (event.type === 'text-start' || event.type === 'text-delta') {
-              if (event.type === 'text-delta') {
-                const textPart = aiMessage.parts.find(p => p.type === 'text') as { type: 'text'; text: string } | undefined;
-                if (textPart) {
-                  textPart.text += event.delta;
-                } else {
-                  aiMessage.parts.push({ type: 'text', text: event.delta });
-                }
-                
-                // Update messages array
-                setMessages(prev => {
-                  const newMessages = [...prev];
-                  newMessages[messageIndex] = { ...aiMessage };
-                  return newMessages;
-                });
-              }
-            }
-            
-            if (event.type === 'tool-input-available') {
-              // Track tool call ID to tool name mapping
-              toolCallMap.set(event.toolCallId, event.toolName);
-            }
-            
-            if (event.type === 'tool-output-available') {
-              const toolName = toolCallMap.get(event.toolCallId) || 'unknown';
-              const toolResultPart = {
-                type: 'tool-result' as const,
-                toolCallId: event.toolCallId,
-                toolName: toolName,
-                result: event.output,
-              };
-              aiMessage.parts.push(toolResultPart as never);
-              
-              // Update messages array
-              setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[messageIndex] = { ...aiMessage };
-                return newMessages;
-              });
-            }
-
-            if (event.type === 'tool-output-error') {
-              // Add error as text message
-              const errorText = `❌ Error: ${event.errorText}`;
-              const existingTextPart = aiMessage.parts.find(p => p.type === 'text') as { type: 'text'; text: string } | undefined;
-              
-              if (existingTextPart) {
-                existingTextPart.text += '\n' + errorText;
-              } else {
-                aiMessage.parts.push({ type: 'text', text: errorText });
-              }
-              
-              // Update messages array
-              setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[messageIndex] = { ...aiMessage };
-                return newMessages;
-              });
-            }
-            
-            if (event.type === 'finish') {
-              // If assistant message has no text but has tool results, add a placeholder text
-              // This prevents empty messages from being filtered out by the API
-              const hasText = aiMessage.parts.some(p => p.type === 'text' && p.text?.trim());
-              const hasTools = aiMessage.parts.some(p => p.type === 'tool-result');
-              
-              if (!hasText && hasTools) {
-                aiMessage.parts.unshift({ type: 'text', text: '[Data retrieved]' });
-              }
-            }
-          } catch (e) {
-            console.error('[Stream parse]', e);
-          }
-        }
-      }
-      
-      // Final update to ensure message is saved
-      setMessages(prev => {
-        const newMessages = [...prev];
-        if (newMessages[messageIndex]) {
-          newMessages[messageIndex] = aiMessage;
-        } else {
-          newMessages.push(aiMessage);
-        }
-        return newMessages;
-      });
-      
-    } catch (err) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        console.error('[Send error]', err);
-        setError(err);
-      }
-    } finally {
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
-  }, [messages]);
-
-  const stop = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsStreaming(false);
-    }
-  }, []);
+  const isStreaming = status === 'streaming';
+  const isReady = status === 'ready';
 
   const onSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
-    if (trimmed && !isStreaming) {
-      sendMessage(trimmed);
+    if (trimmed && isReady) {
+      sendMessage({ text: trimmed });
       setInput('');
       setShouldAutoScroll(true);
     }
-  }, [input, isStreaming, sendMessage]);
+  }, [input, isReady, sendMessage]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       const trimmed = input.trim();
-      if (trimmed && !isStreaming) {
-        sendMessage(trimmed);
+      if (trimmed && isReady) {
+        sendMessage({ text: trimmed });
         setInput('');
         setShouldAutoScroll(true);
       }
     }
-  }, [input, isStreaming, sendMessage]);
+  }, [input, isReady, sendMessage]);
 
   const handleSuggestedPromptClick = useCallback((prompt: string) => {
-    if (!isStreaming) {
-      sendMessage(prompt);
+    if (isReady) {
+      sendMessage({ text: prompt });
       setShouldAutoScroll(true);
     }
-  }, [isStreaming, sendMessage]);
-
-  const isReady = !isStreaming;
+  }, [isReady, sendMessage]);
 
   return (
     <div className="container mx-auto max-w-6xl p-6 h-[calc(100vh-4rem)] flex flex-col gap-6">

@@ -1,9 +1,39 @@
 import { streamText, convertToModelMessages, UIMessage } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { chatTools } from '@/lib/chat-tools';
 
 // Force dynamic rendering to prevent response buffering/caching
 export const dynamic = 'force-dynamic';
+
+// System prompt for Pulse
+const SYSTEM_PROMPT = `You are Pulse, an intelligent AI assistant for the Cursor AI Usage Dashboard.
+
+You have tools to fetch real-time data. Use them when users ask for specific information, but NOT for general conversation.
+
+USE TOOLS when user asks for:
+✅ Leaderboards/rankings: "top users", "who's leading", "show leaderboard"
+✅ Specific user stats: "how is [name] doing?", "what are [name]'s stats?", "[name] stats today"
+✅ Achievements: "what achievements", "show badges", "team achievements"
+✅ Team metrics: "team stats", "total productivity", "team performance"
+
+DO NOT use tools for:
+❌ Greetings: "hello", "hi", "how are you"
+❌ Thanks/acknowledgments: "thanks", "cool", "nice"
+❌ General questions: "what can you do?", "help me"
+❌ Commentary: "that's good", "interesting", "not bad"
+❌ Text generation: "write a sentence", "tell me about", "explain"
+
+IMPORTANT: If a user mentions a person's name with words like "stats", "performance", "metrics", "activity", "doing" - USE getUserProfile tool.
+
+Examples:
+- "What is John's stats?" → Use getUserProfile
+- "How is Sarah doing today?" → Use getUserProfile
+- "Show róka stats" → Use getUserProfile
+- "hello" → Respond conversationally (no tool)
+- "that's great" → Respond conversationally (no tool)
+
+Be helpful and conversational when not fetching data.`;
 
 export async function POST(req: Request) {
   try {
@@ -19,34 +49,55 @@ export async function POST(req: Request) {
 
     const openai = createOpenAI({ apiKey });
     
-    const { messages }: { messages: UIMessage[] } = await req.json();
+    const body = await req.json() as { messages: UIMessage[] };
+    const messages = body.messages;
     
     // Validate messages array
     if (!Array.isArray(messages) || messages.length === 0) {
+      console.error('[Pulse API] Invalid messages:', body);
       return new Response(
         JSON.stringify({ error: 'Invalid messages format' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
+
+    // Convert UI messages to clean text-only format to avoid OpenAI API errors with tool results
+    // This preserves conversation context while avoiding malformed tool call issues
+    // Single-pass iteration for better performance (O(n) instead of O(2n))
+    const cleanMessages: UIMessage[] = messages.reduce<UIMessage[]>((acc, msg) => {
+      if (msg.role === 'user') {
+        acc.push(msg); // Keep user messages as-is
+      } else if (msg.role === 'assistant') {
+        // Extract only text content from assistant messages, ignore tool results
+        const textParts = msg.parts
+          .filter(p => p.type === 'text')
+          .map(p => p.type === 'text' ? p.text : '')
+          .join('\n');
+        
+        // Only add assistant message if it has text content
+        if (textParts.trim()) {
+          acc.push({
+            ...msg,
+            parts: [{ type: 'text' as const, text: textParts }]
+          });
+        }
+      } else {
+        acc.push(msg);
+      }
+      return acc;
+    }, []);
     
     const result = streamText({
-      model: openai('gpt-5'),
-      messages: await convertToModelMessages(messages),
-      system: 'You are a helpful assistant for the Cursor AI Usage Dashboard. You help users understand their team\'s AI usage metrics and can answer questions about productivity, coding assistance, and AI-powered development workflows.',
+      model: openai('gpt-4o'),
+      messages: await convertToModelMessages(cleanMessages),
+      system: SYSTEM_PROMPT,
+      tools: chatTools,
       temperature: 0.7,
     });
     
-    return result.toUIMessageStreamResponse({
-      originalMessages: messages,
-      onFinish: async ({ isAborted }) => {
-        // Log completion for monitoring (optional)
-        if (isAborted) {
-          console.log('[Chat] Stream aborted by client');
-        }
-      },
-    });
+    return result.toUIMessageStreamResponse();
   } catch (error) {
-    console.error('[Chat API] Error:', error);
+    console.error('[Pulse API] Error:', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Internal server error' 

@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
+	// Optimize package imports to avoid loading entire barrel files
+	// This reduces bundle size and improves dev server boot time
+	experimental: {
+		optimizePackageImports: ['lucide-react'],
+	},
 };
 
 export default nextConfig;
