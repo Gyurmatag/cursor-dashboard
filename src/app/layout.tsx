@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import { NavHeader } from "@/components/nav-header";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthError } from "@/components/auth-error";
 import "./globals.css";
+
+// Force dynamic rendering for all pages since NavHeader needs session
+export const dynamic = 'force-dynamic';
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -39,6 +44,10 @@ export default function RootLayout({
 					disableTransitionOnChange
 				>
 					<NavHeader />
+					{/* Auth error display for failed sign-ins */}
+					<Suspense fallback={null}>
+						<AuthError />
+					</Suspense>
 					<main className="min-h-[calc(100vh-3.5rem)]">
 						{children}
 					</main>

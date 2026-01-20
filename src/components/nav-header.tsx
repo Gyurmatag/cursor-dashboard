@@ -1,48 +1,36 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import { Suspense } from 'react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
-import { LayoutDashboardIcon, TableIcon } from 'lucide-react';
+import { NavLinks } from '@/components/nav-links';
+import { UserNav } from '@/components/user-nav';
+import { getSession } from '@/lib/auth-server';
 
-// Hoist static navigation items outside component
-const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
-  { href: '/leaderboard', label: 'Leaderboard', icon: TableIcon },
-] as const;
+/**
+ * Server component for the navigation header
+ * Fetches session and passes minimal user data to client components
+ */
+export async function NavHeader() {
+  const session = await getSession();
 
-export function NavHeader() {
-  const pathname = usePathname();
+  // Only pass the minimal user data needed by UserNav (server-serialization best practice)
+  const user = session?.user ? {
+    name: session.user.name,
+    email: session.user.email,
+    image: session.user.image ?? null,
+  } : null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Navigation - Left aligned */}
-        <nav className="flex items-center space-x-8 text-sm font-medium">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                prefetch={true}
-                className={cn(
-                  'flex items-center gap-2 transition-colors hover:text-foreground/80',
-                  isActive ? 'text-foreground' : 'text-foreground/60'
-                )}
-              >
-                <Icon className="size-4" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        <NavLinks />
         
-        {/* Theme switcher - Right aligned */}
-        <ThemeSwitcher />
+        {/* Right side - User nav and theme switcher */}
+        <div className="flex items-center gap-4">
+          <Suspense fallback={<div className="h-8 w-32 bg-muted animate-pulse rounded" />}>
+            <UserNav user={user} />
+          </Suspense>
+          <ThemeSwitcher />
+        </div>
       </div>
     </header>
   );

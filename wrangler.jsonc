@@ -1,56 +1,96 @@
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
-/**
- * For more details on how to configure Wrangler, refer to:
- * https://developers.cloudflare.com/workers/wrangler/configuration/
- */
 {
-	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "cursor-dashboard",
-	"main": ".open-next/worker.js",
-	"compatibility_date": "2025-12-01",
-	"compatibility_flags": [
-		"nodejs_compat",
-		"global_fetch_strictly_public"
-	],
-	"assets": {
-		"binding": "ASSETS",
-		"directory": ".open-next/assets"
-	},
-	"images": {
-		// Enable image optimization
-		// see https://opennext.js.org/cloudflare/howtos/image
-		"binding": "IMAGES"
-	},
-	"services": [
-		{
-			// Self-reference service binding, the service name must match the worker name
-			// see https://opennext.js.org/cloudflare/caching
-			"binding": "WORKER_SELF_REFERENCE",
-			"service": "cursor-dashboard"
-		}
-	],
-	"observability": {
-		"enabled": true
-	}
-	/**
-	 * Smart Placement
-	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
-	 */
-	// "placement": {  "mode": "smart" }
-	/**
-	 * Bindings
-	 * Bindings allow your Worker to interact with resources on the Cloudflare Developer Platform, including
-	 * databases, object storage, AI inference, real-time communication and more.
-	 * https://developers.cloudflare.com/workers/runtime-apis/bindings/
-	 */
-	/**
-	 * Environment Variables
-	 * https://developers.cloudflare.com/workers/wrangler/configuration/#environment-variables
-	 * Note: Use secrets to store sensitive data.
-	 * https://developers.cloudflare.com/workers/configuration/secrets/
-	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+  // Wrangler Configuration (JSONC format)
+  // Documentation: https://developers.cloudflare.com/workers/wrangler/configuration/
+  "$schema": "./node_modules/wrangler/config-schema.json",
+
+  // Cloudflare Account (Cfi-ops)
+  "account_id": "67d05e471e1ffe25b7ba89dc94d53c1e",
+
+  // Project Identity
+  "name": "cursor-dashboard",
+  "main": ".open-next/worker.js",
+
+  // Compatibility Settings
+  "compatibility_date": "2025-12-01",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "global_fetch_strictly_public"
+  ],
+
+  // Static Assets Configuration
+  // https://developers.cloudflare.com/workers/static-assets/binding/
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".open-next/assets"
+  },
+
+  // Image Optimization
+  // https://opennext.js.org/cloudflare/howtos/image
+  "images": {
+    "binding": "IMAGES"
+  },
+
+  // Service Bindings
+  // https://developers.cloudflare.com/workers/runtime-apis/bindings/service-bindings/
+  "services": [
+    {
+      // Self-reference for ISR/caching support
+      // https://opennext.js.org/cloudflare/caching
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "cursor-dashboard"
+    }
+  ],
+
+  // D1 Database Bindings
+  // https://developers.cloudflare.com/d1/
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "cursor-achievements",
+      "database_id": "e5a141ed-f0c6-40c8-8475-100d887c16b1",
+      "migrations_dir": "src/db/migrations"
+    }
+  ],
+
+  // Observability & Logging
+  // https://developers.cloudflare.com/workers/observability/
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+
+  // Smart Placement (optional - uncomment to enable)
+  // https://developers.cloudflare.com/workers/configuration/smart-placement/
+  // "placement": { "mode": "smart" }
+
+  // Environment Variables
+  // https://developers.cloudflare.com/workers/configuration/secrets/
+  // "vars": {
+  //   "BETTER_AUTH_URL": "https://your-production-domain.com"
+  // }
+
+  // ============================================================================
+  // REQUIRED SECRETS (set via `wrangler secret put <NAME>`)
+  // ============================================================================
+  // 
+  // Authentication secrets - run these commands to set them:
+  //
+  // 1. Google OAuth Client Secret:
+  //    wrangler secret put GOOGLE_CLIENT_SECRET
+  //    (Enter the Google OAuth client secret when prompted)
+  //
+  // 2. Better Auth Session Secret (generate a random 32-char string):
+  //    wrangler secret put BETTER_AUTH_SECRET
+  //    (Enter a secure random string, e.g.: openssl rand -base64 32)
+  //
+  // 3. Better Auth Base URL:
+  //    wrangler secret put BETTER_AUTH_URL
+  //    (Enter your production URL, e.g.: https://cursor-dashboard.example.com)
+  //
+  // For local development, create a .dev.vars file with:
+  //   GOOGLE_CLIENT_SECRET=your_google_client_secret
+  //   BETTER_AUTH_SECRET=your_random_secret_for_dev
+  //   BETTER_AUTH_URL=http://localhost:3000
+  //
+  // ============================================================================
 }
