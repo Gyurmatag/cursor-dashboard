@@ -131,6 +131,19 @@ export const DATE_PRESET_CONFIG: Record<Exclude<PresetKey, 'custom'>, PresetConf
       'Year to date'
     ),
   },
+  alltime: {
+    label: 'All Time',
+    calculate: () => {
+      // Account inception date - when Cursor team tracking started
+      const ACCOUNT_INCEPTION = new Date('2025-06-16T00:00:00Z').getTime();
+      const MILLISECONDS_PER_DAY_LOCAL = 1000 * 60 * 60 * 24;
+      const totalDays = Math.ceil((Date.now() - ACCOUNT_INCEPTION) / MILLISECONDS_PER_DAY_LOCAL);
+      return {
+        startDate: ACCOUNT_INCEPTION,
+        label: `All Time (${totalDays} days)`,
+      };
+    },
+  },
 };
 
 /**
