@@ -20,8 +20,7 @@ import {
   capDateRangeToMax, 
   formatDateRangeDisplay,
   MAX_DATE_RANGE_DAYS,
-  calculateDaysBetween,
-  ACCOUNT_INCEPTION_DATE 
+  calculateDaysBetween 
 } from './date-utils';
 
 // Type for preset configuration

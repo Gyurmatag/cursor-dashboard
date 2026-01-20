@@ -1,7 +1,7 @@
 'use server';
 
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { eq, sql, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte } from 'drizzle-orm';
 import { createDb } from '@/db';
 import * as schema from '@/db/schema';
 import { getTeamMembers, getDailyUsageData, aggregateUserMetrics } from './cursor-api';
@@ -125,8 +125,7 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
     let totalTabAccepts = 0;
     let totalAccepts = 0;
     let totalApplies = 0;
-    let activeDays = new Set<string>();
-    let mostUsedModel = 'N/A';
+    const activeDays = new Set<string>();
     const modelUsage = new Map<string, number>();
 
     for (const record of userDailyData) {
@@ -151,6 +150,7 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
     }
 
     // Find most used model
+    let mostUsedModel = 'N/A';
     let maxUsage = 0;
     for (const [model, count] of modelUsage) {
       if (count > maxUsage) {

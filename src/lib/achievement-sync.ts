@@ -304,7 +304,7 @@ export async function runCompleteHistoricalBackfill(
     const MAX_RANGE_DAYS = 30;
     const DELAY_BETWEEN_REQUESTS = 3000; // 3 seconds to respect rate limits
     
-    let allUsageData: DailyUsageRecord[] = [];
+    const allUsageData: DailyUsageRecord[] = [];
     let currentEndDate = Date.now();
     let requestCount = 0;
     
