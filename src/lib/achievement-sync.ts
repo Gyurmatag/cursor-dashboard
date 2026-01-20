@@ -14,6 +14,10 @@ import {
   checkAndAwardTeamAchievements,
 } from './achievement-calculator';
 import type { DailyUsageRecord } from './cursor-api';
+import {
+  getSyncMetadata,
+  updateSyncMetadata,
+} from './sync-metadata-kv';
 
 export interface SyncResult {
   success: boolean;
@@ -62,21 +66,35 @@ async function fetchDailyUsageDataDirect(
 
 /**
  * Run an incremental sync - fetch only new data since last sync
+ * 
+ * @param db - D1 Database instance
+ * @param apiKey - Cursor API key
+ * @param kv - Optional KV namespace for metadata (preferred), falls back to D1 if not provided
  */
 export async function runIncrementalSync(
   db: Database,
-  apiKey: string
+  apiKey: string,
+  kv?: KVNamespace
 ): Promise<SyncResult> {
   try {
-    // Update sync status to running
+    // Update sync status to running (both KV and D1 for transition period)
+    if (kv) {
+      await updateSyncMetadata(kv, { syncStatus: 'running', errorMessage: null });
+    }
     await db
       .update(syncMetadata)
       .set({ syncStatus: 'running', errorMessage: null })
       .where(eq(syncMetadata.id, 'sync'));
 
-    // Get last sync date
-    const meta = await db.select().from(syncMetadata).where(eq(syncMetadata.id, 'sync'));
-    const lastSyncDate = meta[0]?.lastSyncDate;
+    // Get last sync date (prefer KV, fallback to D1)
+    let lastSyncDate: string | null | undefined;
+    if (kv) {
+      const kvMeta = await getSyncMetadata(kv);
+      lastSyncDate = kvMeta?.lastSyncDate;
+    } else {
+      const meta = await db.select().from(syncMetadata).where(eq(syncMetadata.id, 'sync'));
+      lastSyncDate = meta[0]?.lastSyncDate;
+    }
 
     // Calculate date range
     const yesterday = getYesterday();
@@ -89,6 +107,14 @@ export async function runIncrementalSync(
     const usageData = await fetchDailyUsageDataDirect(apiKey, startDate, endDate);
 
     if (usageData.length === 0) {
+      // Update both KV and D1 for transition period
+      if (kv) {
+        await updateSyncMetadata(kv, {
+          syncStatus: 'idle',
+          lastSyncAt: new Date().toISOString(),
+          lastSyncDate: yesterday,
+        });
+      }
       await db
         .update(syncMetadata)
         .set({
@@ -108,7 +134,15 @@ export async function runIncrementalSync(
     // Process the data
     const result = await processUsageData(db, usageData);
 
-    // Update sync metadata
+    // Update sync metadata (both KV and D1 for transition period)
+    if (kv) {
+      await updateSyncMetadata(kv, {
+        syncStatus: 'idle',
+        lastSyncAt: new Date().toISOString(),
+        lastSyncDate: yesterday,
+        errorMessage: null,
+      });
+    }
     await db
       .update(syncMetadata)
       .set({
@@ -128,6 +162,13 @@ export async function runIncrementalSync(
     console.error('Sync error:', error);
 
     try {
+      // Update both KV and D1 for transition period
+      if (kv) {
+        await updateSyncMetadata(kv, {
+          syncStatus: 'error',
+          errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
       await db
         .update(syncMetadata)
         .set({

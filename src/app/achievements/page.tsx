@@ -12,6 +12,8 @@ import { ArrowLeftIcon, TrophyIcon, ClockIcon, UsersIcon, UserIcon } from 'lucid
 import { format } from 'date-fns';
 import { getSession } from '@/lib/auth-server';
 import { INDIVIDUAL_ACHIEVEMENTS } from '@/lib/achievements';
+import { getSyncMetadata } from '@/lib/sync-metadata-kv';
+import { eq } from 'drizzle-orm';
 
 // Force dynamic rendering since we need to access D1 database
 export const dynamic = 'force-dynamic';
@@ -166,12 +168,27 @@ async function PersonalAchievementsContent() {
 
 async function LastSyncInfo() {
   const { env } = await getCloudflareContext();
+  const kv = env.SYNC_KV;
   const db = createDb(env.DB);
 
-  const meta = await db.select().from(syncMetadata).limit(1);
-  const syncData = meta.length > 0 ? meta[0] : null;
+  // Try to get sync metadata from KV first, fallback to D1
+  let lastSyncAt: Date | null = null;
+  
+  if (kv) {
+    const kvMeta = await getSyncMetadata(kv);
+    if (kvMeta?.lastSyncAt) {
+      lastSyncAt = new Date(kvMeta.lastSyncAt);
+    }
+  }
+  
+  // Fallback to D1 if KV didn't have data
+  if (!lastSyncAt) {
+    const meta = await db.select().from(syncMetadata).where(eq(syncMetadata.id, 'sync')).limit(1);
+    const syncData = meta.length > 0 ? meta[0] : null;
+    lastSyncAt = syncData?.lastSyncAt ?? null;
+  }
 
-  if (!syncData?.lastSyncAt) {
+  if (!lastSyncAt) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <ClockIcon className="size-4" />
@@ -183,7 +200,7 @@ async function LastSyncInfo() {
   return (
     <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <ClockIcon className="size-4" />
-      <span>Last sync: {format(syncData.lastSyncAt, 'MMM d, HH:mm')}</span>
+      <span>Last sync: {format(lastSyncAt, 'MMM d, HH:mm')}</span>
     </div>
   );
 }

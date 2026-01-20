@@ -3,8 +3,9 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { eq } from 'drizzle-orm';
 import { createDb, syncMetadata } from '@/db';
 import { runIncrementalSync } from '@/lib/achievement-sync';
+import { getSyncMetadata } from '@/lib/sync-metadata-kv';
 
-// Rate limit: 1 refresh per 5 minutes
+// Rate limit: 1 refresh per 5 minutes (50 minutes for cron, but keeping 5 min for manual refresh)
 const RATE_LIMIT_SECONDS = 300;
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -12,6 +13,7 @@ export async function POST(_request: NextRequest) {
   try {
     const { env } = await getCloudflareContext();
     const db = createDb(env.DB);
+    const kv = env.SYNC_KV;
     const apiKey = env.CURSOR_ADMIN_API_KEY as string;
 
     if (!apiKey) {
@@ -21,9 +23,22 @@ export async function POST(_request: NextRequest) {
       );
     }
 
-    // Check rate limit
-    const meta = await db.select().from(syncMetadata).where(eq(syncMetadata.id, 'sync'));
-    const lastSync = meta[0]?.lastSyncAt?.getTime() || 0;
+    // Check rate limit using KV (prefer KV, fallback to D1)
+    let lastSync = 0;
+    let isRunning = false;
+
+    if (kv) {
+      const kvMeta = await getSyncMetadata(kv);
+      if (kvMeta?.lastSyncAt) {
+        lastSync = new Date(kvMeta.lastSyncAt).getTime();
+      }
+      isRunning = kvMeta?.syncStatus === 'running';
+    } else {
+      const meta = await db.select().from(syncMetadata).where(eq(syncMetadata.id, 'sync'));
+      lastSync = meta[0]?.lastSyncAt?.getTime() || 0;
+      isRunning = meta[0]?.syncStatus === 'running';
+    }
+
     const now = Date.now();
 
     if (now - lastSync < RATE_LIMIT_SECONDS * 1000) {
@@ -37,15 +52,15 @@ export async function POST(_request: NextRequest) {
     }
 
     // Check if a sync is already running
-    if (meta[0]?.syncStatus === 'running') {
+    if (isRunning) {
       return NextResponse.json(
         { error: 'A sync is already in progress' },
         { status: 409 }
       );
     }
 
-    // Run incremental sync
-    const result = await runIncrementalSync(db, apiKey);
+    // Run incremental sync with KV
+    const result = await runIncrementalSync(db, apiKey, kv);
 
     if (!result.success) {
       return NextResponse.json(

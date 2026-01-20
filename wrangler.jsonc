@@ -52,6 +52,22 @@
     }
   ],
 
+  // KV Namespace Bindings
+  // https://developers.cloudflare.com/kv/
+  "kv_namespaces": [
+    {
+      "binding": "SYNC_KV",
+      "id": "9c6580bdaacd4df3b96a0eebc1e3c079",
+      "preview_id": "31a892d3297e4898ab947ee75a0d129b"
+    }
+  ],
+
+  // Cron Triggers
+  // https://developers.cloudflare.com/workers/configuration/cron-triggers/
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+
   // Observability & Logging
   // https://developers.cloudflare.com/workers/observability/
   "observability": {
