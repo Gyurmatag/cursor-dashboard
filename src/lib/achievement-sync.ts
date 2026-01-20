@@ -452,6 +452,12 @@ async function processUsageData(
             composerRequests: record.composerRequests,
             tabAccepts: record.totalTabsAccepted,
           },
+        })
+        .catch((err) => {
+          // Ignore constraint errors on conflict
+          if (!err.message?.includes('UNIQUE constraint')) {
+            throw err;
+          }
         });
     }
 
