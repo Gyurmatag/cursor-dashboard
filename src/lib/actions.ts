@@ -231,6 +231,9 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
         chatRequests: record.chatRequests,
         composerRequests: record.composerRequests,
         tabAccepts: record.totalTabsAccepted,
+        totalAccepts: record.totalAccepts || 0,
+        totalApplies: record.totalApplies || 0,
+        mostUsedModel: record.mostUsedModel || null,
       }));
 
     return {
