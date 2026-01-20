@@ -10,9 +10,14 @@ import { calculateDateRange } from '@/lib/date-range-presets';
 import { ArrowRightIcon, MessageSquareIcon } from 'lucide-react';
 
 // Calculate date range once at module level
-// Use 90 days to show comprehensive historical data
-// Smart fetching handles this: API for ≤30 days, Database for >30 days
-const DASHBOARD_DATE_RANGE = calculateDateRange('90days');
+// Use ALL TIME data from account inception (June 16, 2025)
+// Smart fetching handles this: Database query for complete history
+const ACCOUNT_INCEPTION = new Date('2025-06-16T00:00:00Z').getTime();
+const DASHBOARD_DATE_RANGE = {
+  startDate: ACCOUNT_INCEPTION,
+  endDate: Date.now(),
+  label: 'All Time (Since Inception)',
+};
 
 // Async server component for summary stats
 // Uses React.cache() internally via fetchLeaderboardData
