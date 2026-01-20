@@ -451,21 +451,26 @@ async function processUsageData(
       }
     }
 
-    // Calculate and update user stats
-    const stats = await calculateUserStats(db, email);
-    await db
-      .insert(userStats)
-      .values(stats as NewUserStats)
-      .onConflictDoUpdate({
-        target: userStats.email,
-        set: stats,
-      });
+    // Calculate and update user stats (wrap in try-catch for production stability)
+    try {
+      const stats = await calculateUserStats(db, email);
+      await db
+        .insert(userStats)
+        .values(stats as NewUserStats)
+        .onConflictDoUpdate({
+          target: userStats.email,
+          set: stats,
+        });
 
-    // Check and award individual achievements
-    const fullStats = await db.select().from(userStats).where(eq(userStats.email, email));
-    if (fullStats.length > 0) {
-      const newAchievements = await checkAndAwardUserAchievements(db, email, fullStats[0]);
-      allIndividualAchievements.push(...newAchievements);
+      // Check and award individual achievements
+      const fullStats = await db.select().from(userStats).where(eq(userStats.email, email));
+      if (fullStats.length > 0) {
+        const newAchievements = await checkAndAwardUserAchievements(db, email, fullStats[0]);
+        allIndividualAchievements.push(...newAchievements);
+      }
+    } catch (err) {
+      console.error(`Failed to calculate achievements for ${email}:`, err);
+      // Continue processing other users even if this one fails
     }
   }
 
