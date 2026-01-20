@@ -16,6 +16,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { formatNumber } from '@/lib/utils';
 import { ArrowUpIcon, ArrowDownIcon, TrophyIcon, HelpCircleIcon } from 'lucide-react';
 import type { LeaderboardEntry, LeaderboardSortKey, SortDirection } from '@/types/cursor';
 
@@ -246,22 +247,22 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                   </div>
                 </TableCell>
                 <TableCell className="font-mono font-semibold">
-                  {entry.totalActivityScore.toLocaleString()}
+                  {formatNumber(entry.totalActivityScore)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {entry.acceptedLinesAdded.toLocaleString()}
+                  {formatNumber(entry.acceptedLinesAdded)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {entry.chatRequests.toLocaleString()}
+                  {formatNumber(entry.chatRequests)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {entry.composerRequests.toLocaleString()}
+                  {formatNumber(entry.composerRequests)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {entry.agentRequests.toLocaleString()}
+                  {formatNumber(entry.agentRequests)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
-                  {entry.totalTabsAccepted.toLocaleString()}
+                  {formatNumber(entry.totalTabsAccepted)}
                 </TableCell>
                 <TableCell className="text-right font-mono">
                   {entry.acceptanceRate.toFixed(1)}%

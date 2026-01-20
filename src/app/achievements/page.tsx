@@ -8,6 +8,7 @@ import { RefreshButton } from './refresh-button';
 import { NotInPlanBanner } from '@/components/not-in-plan-banner';
 import { SignInPrompt } from './sign-in-prompt';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowLeftIcon, TrophyIcon, ClockIcon, UsersIcon, UserIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { getSession } from '@/lib/auth-server';
@@ -44,7 +45,7 @@ export default function AchievementsPage() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Suspense fallback={<div className="h-10 w-32 bg-muted animate-pulse rounded-lg" />}>
+            <Suspense fallback={<Skeleton className="h-10 w-32 rounded-lg" />}>
               <LastSyncInfo />
             </Suspense>
             <RefreshButton />

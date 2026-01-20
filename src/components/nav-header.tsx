@@ -3,6 +3,7 @@ import { ThemeSwitcher } from '@/components/theme-switcher';
 import { NavLinks } from '@/components/nav-links';
 import { UserNav } from '@/components/user-nav';
 import { getSession } from '@/lib/auth-server';
+import { Skeleton } from '@/components/ui/skeleton';
 
 /**
  * Server component for the navigation header
@@ -26,7 +27,7 @@ export async function NavHeader() {
         
         {/* Right side - User nav and theme switcher */}
         <div className="flex items-center gap-4">
-          <Suspense fallback={<div className="h-8 w-32 bg-muted animate-pulse rounded" />}>
+          <Suspense fallback={<Skeleton className="h-8 w-32 rounded" />}>
             <UserNav user={user} />
           </Suspense>
           <ThemeSwitcher />

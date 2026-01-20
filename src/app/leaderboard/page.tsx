@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AiUsageLeaderboard } from '@/components/ai-usage-leaderboard';
 import { DateRangeFilter } from '@/components/date-range-filter';
 import { DateRangeDisplay } from '@/components/date-range-display';
-import { DataLoading } from '@/components/data-loading';
+import { LeaderboardTableSkeleton } from '@/components/leaderboard-skeleton';
 import { DataError } from '@/components/data-error';
 import { Button } from '@/components/ui/button';
 import { fetchLeaderboardData } from '@/lib/actions';
@@ -82,7 +82,7 @@ export default function LeaderboardPage() {
 
         {/* Leaderboard Table */}
         {loading ? (
-          <DataLoading message="Loading leaderboard data..." />
+          <LeaderboardTableSkeleton />
         ) : error ? (
           <DataError error={error} title="Error loading leaderboard" />
         ) : leaderboardData ? (

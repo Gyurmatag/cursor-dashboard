@@ -14,6 +14,7 @@ import {
 import type { UserAchievement, TeamAchievement, UserStats, TeamStats } from '@/db/schema';
 import { AchievementCard, AchievementCardSkeleton } from './achievement-card';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type AchievementType = 'individual' | 'team';
 
@@ -170,15 +171,15 @@ export function AchievementGridSkeleton() {
     <div className="space-y-6">
       {/* Progress summary skeleton */}
       <div className="flex items-center justify-end gap-3">
-        <div className="h-4 w-16 bg-muted rounded animate-pulse" />
-        <div className="h-2 w-32 bg-muted rounded-full animate-pulse" />
-        <div className="h-4 w-10 bg-muted rounded animate-pulse" />
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-2 w-32 rounded-full" />
+        <Skeleton className="h-4 w-10" />
       </div>
 
       {/* Category sections skeleton */}
       {[1, 2, 3].map((i) => (
         <div key={i}>
-          <div className="h-6 w-32 bg-muted rounded mb-4 animate-pulse" />
+          <Skeleton className="h-6 w-32 mb-4" />
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {[1, 2, 3, 4].map((j) => (
               <AchievementCardSkeleton key={j} />

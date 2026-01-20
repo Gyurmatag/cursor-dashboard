@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { getSession } from '@/lib/auth-server';
 import { ChatClient } from './chat-client';
 import { ChatSignInPrompt } from './chat-sign-in-prompt';
+import { ChatSkeleton } from '@/components/chat-skeleton';
 
 // Force dynamic rendering since we need to check authentication
 export const dynamic = 'force-dynamic';
@@ -21,7 +22,7 @@ export default async function ChatPage() {
 
   // User is authenticated - show the chat interface
   return (
-    <Suspense fallback={<div className="container mx-auto max-w-6xl p-6"><p>Loading chat...</p></div>}>
+    <Suspense fallback={<ChatSkeleton />}>
       <ChatClient />
     </Suspense>
   );

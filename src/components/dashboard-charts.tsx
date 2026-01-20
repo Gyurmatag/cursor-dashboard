@@ -20,6 +20,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatNumber } from '@/lib/utils';
 import type { LeaderboardEntry } from '@/types/cursor';
 
 interface DashboardChartsProps {
@@ -116,7 +117,7 @@ const ActivityBreakdownChart = React.memo(function ActivityBreakdownChart({
             />
             <XAxis 
               type="number" 
-              tickFormatter={(value) => value.toLocaleString()}
+              tickFormatter={(value) => formatNumber(value)}
               stroke="hsl(var(--muted-foreground))"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />
@@ -244,7 +245,7 @@ const TopPerformersChart = React.memo(function TopPerformersChart({
               tick={{ fill: 'hsl(var(--foreground))' }}
             />
             <YAxis 
-              tickFormatter={(value) => value.toLocaleString()}
+              tickFormatter={(value) => formatNumber(value)}
               stroke="hsl(var(--muted-foreground))"
               tick={{ fill: 'hsl(var(--muted-foreground))' }}
             />

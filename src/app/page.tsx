@@ -1,45 +1,32 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { SummaryStats } from '@/components/summary-stats';
 import { DashboardCharts } from '@/components/dashboard-charts';
-import { DataLoading } from '@/components/data-loading';
-import { DataError } from '@/components/data-error';
+import { SummaryStatsSkeleton } from '@/components/summary-stats-skeleton';
+import { DashboardChartsSkeleton } from '@/components/dashboard-charts-skeleton';
 import { Button } from '@/components/ui/button';
 import { fetchLeaderboardData } from '@/lib/actions';
 import { calculateDateRange } from '@/lib/date-range-presets';
 import { ArrowRightIcon } from 'lucide-react';
-import type { LeaderboardEntry } from '@/types/cursor';
+
+// Async server component for summary stats
+async function SummaryStatsAsync() {
+  const dateRange = calculateDateRange('30days');
+  const data = await fetchLeaderboardData(dateRange.startDate, dateRange.endDate);
+  return <SummaryStats data={data} />;
+}
+
+// Async server component for dashboard charts
+async function DashboardChartsAsync() {
+  const dateRange = calculateDateRange('30days');
+  const data = await fetchLeaderboardData(dateRange.startDate, dateRange.endDate);
+  return <DashboardCharts data={data} />;
+}
 
 export default function DashboardPage() {
-  const [leaderboardData, setLeaderboardData] = useState<LeaderboardEntry[] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  // Fetch data on mount with 30-day default
-  useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      setError(null);
-      
-      try {
-        const dateRange = calculateDateRange('30days');
-        const data = await fetchLeaderboardData(dateRange.startDate, dateRange.endDate);
-        setLeaderboardData(data);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchData();
-  }, []);
-
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
-      {/* Header */}
+      {/* Header - shows immediately */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -53,31 +40,23 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Summary Stats Section */}
+      {/* Summary Stats Section - streams in independently */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Team Overview</h2>
-        {loading ? (
-          <DataLoading message="Loading team statistics..." />
-        ) : error ? (
-          <DataError error={error} title="Error loading statistics" />
-        ) : leaderboardData ? (
-          <SummaryStats data={leaderboardData} />
-        ) : null}
+        <Suspense fallback={<SummaryStatsSkeleton />}>
+          <SummaryStatsAsync />
+        </Suspense>
       </section>
 
-      {/* Charts Section */}
+      {/* Charts Section - streams in independently */}
       <section className="space-y-4">
         <h2 className="text-xl font-semibold">Detailed Analytics</h2>
-        {loading ? (
-          <DataLoading message="Loading charts..." />
-        ) : error ? (
-          <DataError error={error} title="Error loading charts" />
-        ) : leaderboardData ? (
-          <DashboardCharts data={leaderboardData} />
-        ) : null}
+        <Suspense fallback={<DashboardChartsSkeleton />}>
+          <DashboardChartsAsync />
+        </Suspense>
       </section>
 
-      {/* Quick Actions */}
+      {/* Quick Actions - shows immediately */}
       <section className="py-6 border-t">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>

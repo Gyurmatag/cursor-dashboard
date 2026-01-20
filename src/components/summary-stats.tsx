@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatNumber } from '@/lib/utils';
 import { 
   TrendingUpIcon, 
   CodeIcon, 
@@ -117,33 +118,33 @@ export const SummaryStats = React.memo(function SummaryStats({
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <StatCard
         title="Total Activity Score"
-        value={stats.totalScore.toLocaleString()}
+        value={formatNumber(stats.totalScore)}
         description="Combined team score"
         icon="score"
         highlight
       />
       <StatCard
         title="Accepted Lines"
-        value={stats.totalLines.toLocaleString()}
+        value={formatNumber(stats.totalLines)}
         description="AI-generated code kept"
         icon="lines"
       />
       <StatCard
         title="Total Requests"
-        value={stats.totalRequests.toLocaleString()}
-        description={`Chat: ${stats.totalChat.toLocaleString()} | Composer: ${stats.totalComposer.toLocaleString()} | Agent: ${stats.totalAgent.toLocaleString()}`}
+        value={formatNumber(stats.totalRequests)}
+        description={`Chat: ${formatNumber(stats.totalChat)} | Composer: ${formatNumber(stats.totalComposer)} | Agent: ${formatNumber(stats.totalAgent)}`}
         icon="chat"
       />
       <StatCard
         title="Tab Accepts"
-        value={stats.totalTabs.toLocaleString()}
+        value={formatNumber(stats.totalTabs)}
         description="Inline completions accepted"
         icon="tabs"
       />
       <StatCard
         title="Top Performer"
         value={stats.topUser.name}
-        description={`Score: ${stats.topUser.totalActivityScore.toLocaleString()}`}
+        description={`Score: ${formatNumber(stats.topUser.totalActivityScore)}`}
         icon="topUser"
         highlight
       />
@@ -155,13 +156,13 @@ export const SummaryStats = React.memo(function SummaryStats({
       />
       <StatCard
         title="Chat Requests"
-        value={stats.totalChat.toLocaleString()}
+        value={formatNumber(stats.totalChat)}
         description="AI chat interactions"
         icon="chat"
       />
       <StatCard
         title="Agent Requests"
-        value={stats.totalAgent.toLocaleString()}
+        value={formatNumber(stats.totalAgent)}
         description="Autonomous task requests"
         icon="agent"
       />
