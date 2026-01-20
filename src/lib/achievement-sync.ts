@@ -432,13 +432,14 @@ async function processUsageData(
 
       // Use raw SQL for proper UPSERT with composite key
       // This avoids ID generation conflicts with $defaultFn
+      // IMPORTANT: Use totalLinesAdded (not acceptedLinesAdded) to match official Cursor dashboard
       try {
         await db.run(sql`
           INSERT INTO daily_snapshots (id, user_email, date, is_active, lines_added, agent_requests, chat_requests, composer_requests, tab_accepts)
-          VALUES (${crypto.randomUUID()}, ${email}, ${date}, ${record.isActive ? 1 : 0}, ${record.acceptedLinesAdded}, ${record.agentRequests}, ${record.chatRequests}, ${record.composerRequests}, ${record.totalTabsAccepted})
+          VALUES (${crypto.randomUUID()}, ${email}, ${date}, ${record.isActive ? 1 : 0}, ${record.totalLinesAdded}, ${record.agentRequests}, ${record.chatRequests}, ${record.composerRequests}, ${record.totalTabsAccepted})
           ON CONFLICT(user_email, date) DO UPDATE SET
             is_active = ${record.isActive ? 1 : 0},
-            lines_added = ${record.acceptedLinesAdded},
+            lines_added = ${record.totalLinesAdded},
             agent_requests = ${record.agentRequests},
             chat_requests = ${record.chatRequests},
             composer_requests = ${record.composerRequests},
