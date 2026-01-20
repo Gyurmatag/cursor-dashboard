@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import Bug from 'lucide-react/dist/esm/icons/bug';
+import { Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
