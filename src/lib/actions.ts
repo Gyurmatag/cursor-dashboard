@@ -5,7 +5,6 @@ import { eq, and, gte, lte } from 'drizzle-orm';
 import { createDb } from '@/db';
 import * as schema from '@/db/schema';
 import { getTeamMembers, getDailyUsageData, aggregateUserMetrics } from './cursor-api';
-import { calculateDateRange } from './date-range-presets';
 import type { LeaderboardEntry, DailyUsageRecord } from '@/types/cursor';
 import type { UserStats, UserAchievement, DailySnapshot } from '@/db/schema';
 
@@ -174,7 +173,6 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
     let totalAccepts = 0;
     let totalApplies = 0;
     const activeDays = new Set<string>();
-    const modelUsage = new Map<string, number>();
 
     for (const record of userDailyData) {
       totalLinesAdded += record.acceptedLinesAdded;
@@ -187,23 +185,6 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
       
       if (record.isActive) {
         activeDays.add(new Date(record.date).toISOString().split('T')[0]);
-      }
-
-      if (record.mostUsedModel) {
-        modelUsage.set(
-          record.mostUsedModel,
-          (modelUsage.get(record.mostUsedModel) || 0) + 1
-        );
-      }
-    }
-
-    // Find most used model
-    let mostUsedModel = 'N/A';
-    let maxUsage = 0;
-    for (const [model, count] of modelUsage) {
-      if (count > maxUsage) {
-        maxUsage = count;
-        mostUsedModel = model;
       }
     }
 

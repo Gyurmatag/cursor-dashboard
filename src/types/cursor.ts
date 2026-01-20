@@ -73,7 +73,7 @@ export interface CustomDateRange {
 }
 
 // Date Range Preset Keys - supports unlimited historical data
-export type PresetKey = 
+export type PresetKey =
   | 'today'
   | 'yesterday'
   | '7days'
@@ -85,6 +85,7 @@ export type PresetKey =
   | 'lastMonth'
   | 'qtd'
   | 'ytd'
+  | 'alltime'
   | 'custom';
 
 // Sort Types

@@ -6,7 +6,6 @@ import { SummaryStatsSkeleton } from '@/components/summary-stats-skeleton';
 import { DashboardChartsSkeleton } from '@/components/dashboard-charts-skeleton';
 import { Button } from '@/components/ui/button';
 import { fetchLeaderboardData } from '@/lib/actions';
-import { calculateDateRange } from '@/lib/date-range-presets';
 import { ArrowRightIcon, MessageSquareIcon } from 'lucide-react';
 
 // Calculate date range once at module level

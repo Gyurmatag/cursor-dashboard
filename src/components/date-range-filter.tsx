@@ -43,6 +43,7 @@ const PRESET_GROUPS: PresetButton[][] = [
     { key: 'qtd', label: 'QTD' },
   ],
   [
+    { key: 'alltime', label: 'All Time' },
     { key: 'today', label: 'Today' },
     { key: 'yesterday', label: 'Yesterday' },
   ],

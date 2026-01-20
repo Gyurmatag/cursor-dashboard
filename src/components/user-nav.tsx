@@ -2,9 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { signIn, signOut } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -88,9 +88,11 @@ export function UserNav({ user }: UserNavProps) {
           type="button"
         >
           {user.image ? (
-            <img
+            <Image
               src={user.image}
               alt={user.name}
+              width={40}
+              height={40}
               className="h-full w-full object-cover rounded-full"
               referrerPolicy="no-referrer"
             />
