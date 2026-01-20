@@ -8,6 +8,7 @@ declare namespace Cloudflare {
 	interface Env {
 		NEXTJS_ENV: string;
 		CURSOR_ADMIN_API_KEY: string;
+		OPENAI_API_KEY: string;
 		DB: D1Database;
 		WORKER_SELF_REFERENCE: Service<typeof import("./.open-next/worker").default>;
 		IMAGES: ImagesBinding;

@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboardIcon, TableIcon, TrophyIcon } from 'lucide-react';
+import { LayoutDashboardIcon, TableIcon, TrophyIcon, MessageSquareIcon } from 'lucide-react';
 
 // Hoist static navigation items outside component
 const navItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
   { href: '/leaderboard', label: 'Leaderboard', icon: TableIcon },
   { href: '/achievements', label: 'Achievements', icon: TrophyIcon },
+  { href: '/chat', label: 'AI Chat', icon: MessageSquareIcon },
 ] as const;
 
 /**
