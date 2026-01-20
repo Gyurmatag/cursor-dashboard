@@ -7,7 +7,7 @@ import { DashboardChartsSkeleton } from '@/components/dashboard-charts-skeleton'
 import { Button } from '@/components/ui/button';
 import { fetchLeaderboardData } from '@/lib/actions';
 import { calculateDateRange } from '@/lib/date-range-presets';
-import { ArrowRightIcon } from 'lucide-react';
+import { ArrowRightIcon, MessageSquareIcon } from 'lucide-react';
 
 // Async server component for summary stats
 async function SummaryStatsAsync() {
@@ -46,6 +46,25 @@ export default function DashboardPage() {
         <Suspense fallback={<SummaryStatsSkeleton />}>
           <SummaryStatsAsync />
         </Suspense>
+      </section>
+
+      {/* Pulze Chat Section */}
+      <section className="py-6 border-t">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Ask Pulze AI Assistant</h3>
+            <p className="text-sm text-muted-foreground">
+              Get instant insights about your team's AI usage with our intelligent chatbot
+            </p>
+          </div>
+          <Link href="/chat" prefetch={true}>
+            <Button variant="outline" className="gap-2 w-full sm:w-auto">
+              <MessageSquareIcon className="size-4" />
+              Open Chat
+              <ArrowRightIcon className="size-4" />
+            </Button>
+          </Link>
+        </div>
       </section>
 
       {/* Charts Section - streams in independently */}
