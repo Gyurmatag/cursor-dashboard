@@ -68,8 +68,8 @@ export function ProfileActivityChart({ dailySnapshots }: ProfileActivityChartPro
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <CardTitle>Activity Over Time</CardTitle>
-            <CardDescription>Your daily activity for the last 30 days</CardDescription>
+          <CardTitle>Activity Over Time</CardTitle>
+          <CardDescription>Your daily activity (complete history, up to 90 days)</CardDescription>
           </div>
           <div className="flex gap-2 flex-wrap">
             {METRICS.map((metric) => (

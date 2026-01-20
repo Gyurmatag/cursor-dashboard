@@ -99,18 +99,61 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
     const { env } = await getCloudflareContext();
     const db = createDb(env.DB);
 
-    // Calculate last 30 days date range (reliable with API, extends after backfill)
-    const dateRange = calculateDateRange('30days');
+    // Calculate 90 days date range to show complete historical activity
+    // Smart fetching: API for ≤30 days, Database for >30 days (see fetchLeaderboardData)
+    const dateRange = calculateDateRange('90days');
 
     // React best practice: Parallel fetching with Promise.all()
-    // Fetch real-time data from Cursor API and achievements from database in parallel
+    // Fetch data from appropriate source (API or Database) and achievements in parallel
+    const daysDiff = (dateRange.endDate - dateRange.startDate) / (1000 * 60 * 60 * 24);
+    
     const [teamMembers, dailyUsageData, userAchievementsData] = 
       await Promise.all([
         // Real-time: Get team members from Cursor API (uses React.cache())
         getTeamMembers(),
-        // Real-time: Get last 30 days of usage data from Cursor API (uses React.cache())
-        getDailyUsageData(dateRange.startDate, dateRange.endDate),
-        // Database: Get user achievements (calculated from historical data)
+        // Smart fetching: API for ≤30 days, Database for >30 days
+        daysDiff <= 30
+          ? getDailyUsageData(dateRange.startDate, dateRange.endDate)
+          : (async () => {
+              const startDateStr = new Date(dateRange.startDate).toISOString().split('T')[0];
+              const endDateStr = new Date(dateRange.endDate).toISOString().split('T')[0];
+              const snapshotsData = await db.select()
+                .from(schema.dailySnapshots)
+                .where(
+                  and(
+                    gte(schema.dailySnapshots.date, startDateStr),
+                    lte(schema.dailySnapshots.date, endDateStr)
+                  )
+                );
+              // Convert snapshots to DailyUsageRecord format
+              return snapshotsData.map(snap => ({
+                date: new Date(snap.date).getTime(),
+                email: snap.userEmail,
+                isActive: snap.isActive,
+                acceptedLinesAdded: snap.linesAdded,
+                totalTabsAccepted: snap.tabAccepts,
+                chatRequests: snap.chatRequests,
+                composerRequests: snap.composerRequests,
+                agentRequests: snap.agentRequests,
+                totalLinesAdded: snap.linesAdded,
+                totalLinesDeleted: 0,
+                acceptedLinesDeleted: 0,
+                totalApplies: 0,
+                totalAccepts: 0,
+                totalRejects: 0,
+                totalTabsShown: 0,
+                cmdkUsages: 0,
+                subscriptionIncludedReqs: 0,
+                apiKeyReqs: 0,
+                usageBasedReqs: 0,
+                bugbotUsages: 0,
+                mostUsedModel: '',
+                applyMostUsedExtension: '',
+                tabMostUsedExtension: '',
+                clientVersion: '',
+              }));
+            })(),
+        // Database: Get user achievements (calculated from ALL historical data)
         db.select().from(schema.userAchievements).where(eq(schema.userAchievements.userEmail, userEmail)),
       ]);
 
@@ -189,10 +232,10 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
       updatedAt: new Date(),
     };
 
-    // Transform daily data to snapshot format (most recent first, up to 30 days)
+    // Transform daily data to snapshot format (most recent first, up to 90 days)
     const dailySnapshotsData = userDailyData
       .sort((a, b) => b.date - a.date)
-      .slice(0, 30)
+      .slice(0, 90)
       .map(record => ({
         id: `${userEmail}-${record.date}`,
         userEmail,
