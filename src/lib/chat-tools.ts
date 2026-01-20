@@ -27,7 +27,7 @@ export const getLeaderboardTool = tool({
   description: 'Get the top AI users leaderboard with activity scores, lines of code, and usage metrics. Use this to answer questions about top performers, user rankings, or who is using AI the most.',
   inputSchema: z.object({
     limit: z.number().int().min(1).max(50).optional(),
-    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days']).optional(),
+    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd']).optional(),
     sortBy: z.enum(['totalActivityScore', 'acceptedLinesAdded', 'chatRequests', 'composerRequests', 'agentRequests']).optional(),
   }),
   execute: async (params: GetLeaderboardParams): Promise<LeaderboardResult> => {
@@ -168,7 +168,7 @@ export const getAchievementsTool = tool({
 export const getTeamStatsTool = tool({
   description: 'Get aggregate team statistics including total lines of code, AI requests, active members, and daily trends. Use this to answer questions about overall team productivity, usage patterns, or collective metrics.',
   inputSchema: z.object({
-    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days']).optional(),
+    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd']).optional(),
     metric: z.enum(['lines', 'requests', 'tabs', 'all']).optional(),
   }),
   execute: async (params: GetTeamStatsParams): Promise<TeamStatsResult> => {

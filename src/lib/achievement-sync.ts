@@ -287,6 +287,126 @@ export async function runFullBackfill(
 }
 
 /**
+ * Run complete historical backfill using sequential 30-day requests
+ * Walks backwards from today to account inception (June 16, 2025)
+ * 
+ * @param db - D1 Database instance
+ * @param apiKey - Cursor API key
+ * @param kv - Optional KV namespace for metadata
+ */
+export async function runCompleteHistoricalBackfill(
+  db: Database,
+  apiKey: string,
+  kv?: KVNamespace
+): Promise<SyncResult> {
+  try {
+    const ACCOUNT_INCEPTION = new Date('2025-06-16T00:00:00Z').getTime();
+    const MAX_RANGE_DAYS = 30;
+    const DELAY_BETWEEN_REQUESTS = 3000; // 3 seconds to respect rate limits
+    
+    let allUsageData: DailyUsageRecord[] = [];
+    let currentEndDate = Date.now();
+    let requestCount = 0;
+    
+    console.log('Starting complete historical backfill from inception (June 16, 2025)');
+    
+    // Walk backwards in 30-day chunks
+    while (currentEndDate > ACCOUNT_INCEPTION) {
+      const currentStartDate = Math.max(
+        currentEndDate - (MAX_RANGE_DAYS * 24 * 60 * 60 * 1000),
+        ACCOUNT_INCEPTION
+      );
+      
+      requestCount++;
+      console.log(`Fetching chunk ${requestCount}: ${new Date(currentStartDate).toISOString()} to ${new Date(currentEndDate).toISOString()}`);
+      
+      // Fetch 30-day chunk
+      const chunkData = await fetchDailyUsageDataDirect(
+        apiKey,
+        currentStartDate,
+        currentEndDate
+      );
+      
+      console.log(`  → Retrieved ${chunkData.length} daily records`);
+      allUsageData.push(...chunkData);
+      
+      // Move window backwards
+      currentEndDate = currentStartDate - 1;
+      
+      // Rate limiting: wait between requests (except last one)
+      if (currentEndDate > ACCOUNT_INCEPTION) {
+        console.log(`  → Waiting ${DELAY_BETWEEN_REQUESTS}ms before next request...`);
+        await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+      }
+    }
+    
+    console.log(`Complete backfill: fetched ${allUsageData.length} daily records across ${requestCount} requests`);
+    
+    if (allUsageData.length === 0) {
+      return {
+        success: true,
+        processed: 0,
+        newAchievements: { individual: [], team: [] },
+      };
+    }
+    
+    // Process all data
+    const result = await processUsageData(db, allUsageData);
+    
+    // Update metadata with true inception date
+    const dataCollectionStartDate = '2025-06-16';
+    const oldestDataDate = await getOldestDataDate(db);
+    const yesterday = getYesterday();
+    
+    // Update D1 metadata
+    await db
+      .insert(syncMetadata)
+      .values({
+        id: 'sync',
+        lastSyncAt: new Date(),
+        lastSyncDate: yesterday,
+        syncStatus: 'idle',
+      })
+      .onConflictDoUpdate({
+        target: syncMetadata.id,
+        set: {
+          lastSyncAt: new Date(),
+          lastSyncDate: yesterday,
+          syncStatus: 'idle',
+        },
+      });
+    
+    // Update KV metadata if available
+    if (kv) {
+      await updateSyncMetadata(kv, {
+        syncStatus: 'idle',
+        lastSyncAt: new Date().toISOString(),
+        lastSyncDate: yesterday,
+        dataCollectionStartDate,
+        oldestDataDate,
+        errorMessage: null,
+      });
+    }
+    
+    console.log(`Historical backfill complete: processed ${allUsageData.length} records, awarded ${result.individual.length} individual and ${result.team.length} team achievements`);
+    
+    return {
+      success: true,
+      processed: allUsageData.length,
+      newAchievements: result,
+    };
+  } catch (error) {
+    console.error('Complete historical backfill error:', error);
+    return {
+      success: false,
+      processed: 0,
+      newAchievements: { individual: [], team: [] },
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
  * Process usage data and update all stats and achievements
  */
 async function processUsageData(

@@ -20,7 +20,8 @@ import {
   capDateRangeToMax, 
   formatDateRangeDisplay,
   MAX_DATE_RANGE_DAYS,
-  calculateDaysBetween 
+  calculateDaysBetween,
+  ACCOUNT_INCEPTION_DATE 
 } from './date-utils';
 
 // Type for preset configuration
@@ -53,7 +54,7 @@ function createCappedPeriodPreset(
     if (days > MAX_DATE_RANGE_DAYS) {
       return {
         startDate: getStartOfDaysAgo(MAX_DATE_RANGE_DAYS - 1, now),
-        label: `${baseLabel} (limited to 30 days)`,
+        label: `${baseLabel} (limited to ${MAX_DATE_RANGE_DAYS} days)`,
       };
     }
     
@@ -96,12 +97,12 @@ export const DATE_PRESET_CONFIG: Record<Exclude<PresetKey, 'custom'>, PresetConf
     calculate: createDayBasedPreset(30, 'Last 30 days'),
   },
   '60days': {
-    label: 'Last 59 days',
-    calculate: createDayBasedPreset(59, 'Last 59 days'),
+    label: 'Last 60 days',
+    calculate: createDayBasedPreset(60, 'Last 60 days'),
   },
   '90days': {
-    label: 'Last 90 days (Max)',
-    calculate: createDayBasedPreset(90, 'Last 90 days (Max)'),
+    label: 'Last 90 days',
+    calculate: createDayBasedPreset(90, 'Last 90 days'),
   },
   mtd: {
     label: 'Month to date',

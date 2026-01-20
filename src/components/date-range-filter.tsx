@@ -29,13 +29,18 @@ interface PresetButton {
 }
 
 // Hoist preset groups for grid layout - memoized at module level
-// Note: API has a 30-day limit, so we only include presets within that range
 const PRESET_GROUPS: PresetButton[][] = [
   [
     { key: '7days', label: '7 days' },
     { key: '14days', label: '14 days' },
     { key: '30days', label: '30 days' },
+    { key: '60days', label: '60 days' },
+  ],
+  [
+    { key: '90days', label: '90 days' },
     { key: 'mtd', label: 'MTD' },
+    { key: 'ytd', label: 'YTD' },
+    { key: 'qtd', label: 'QTD' },
   ],
   [
     { key: 'today', label: 'Today' },
@@ -121,7 +126,7 @@ export function DateRangeFilter({
       <div>
         <Label className="text-base font-semibold">Time Period</Label>
         <p className="text-xs text-muted-foreground mt-1">
-          Select a preset or choose a custom date range (max {MAX_DATE_RANGE_DAYS} days due to API limitation)
+          Select a preset or choose a custom date range (up to {MAX_DATE_RANGE_DAYS} days)
         </p>
       </div>
 
@@ -174,7 +179,7 @@ export function DateRangeFilter({
                 <div>
                   <h4 className="font-medium text-sm mb-1">Select Date Range</h4>
                   <p className="text-xs text-muted-foreground">
-                    Click start date, then end date (max {MAX_DATE_RANGE_DAYS} days)
+                    Click start date, then end date (up to {MAX_DATE_RANGE_DAYS} days)
                   </p>
                 </div>
                 <Button

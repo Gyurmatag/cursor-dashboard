@@ -7,8 +7,11 @@ import { startOfDay, endOfDay, subDays, format } from 'date-fns';
 
 // Constants
 export const MILLISECONDS_PER_DAY = 1000 * 60 * 60 * 24;
-export const MAX_DATE_RANGE_DAYS = 30;
+export const MAX_DATE_RANGE_DAYS = 365; // No longer limited to 30 days - allow up to 1 year for UI
 export const DATE_FORMAT = 'MMM dd, yyyy';
+
+// Account inception date - when Cursor team tracking started
+export const ACCOUNT_INCEPTION_DATE = new Date('2025-06-16T00:00:00Z');
 
 /**
  * Calculate the number of days between two timestamps

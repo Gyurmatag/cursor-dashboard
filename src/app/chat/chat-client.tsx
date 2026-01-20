@@ -210,9 +210,10 @@ export function ChatClient() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Smart auto-scroll
-  useEffect(() => {
+  // Smart auto-scroll with support for dynamic content rendering
+  const scrollToBottom = useCallback(() => {
     if (!messagesContainerRef.current || !shouldAutoScroll) return;
     
     const container = messagesContainerRef.current;
@@ -221,7 +222,43 @@ export function ChatClient() {
     if (isNearBottom || messages.length === 1) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, shouldAutoScroll]);
+  }, [messages.length, shouldAutoScroll]);
+
+  // Scroll when messages change
+  useEffect(() => {
+    scrollToBottom();
+    
+    // Also scroll after a short delay to handle dynamically rendered components
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    scrollTimeoutRef.current = setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [messages, scrollToBottom]);
+
+  // Observe content height changes for dynamic UI components
+  useEffect(() => {
+    if (!messagesContainerRef.current || !shouldAutoScroll) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      scrollToBottom();
+    });
+
+    // Observe the messages container for size changes
+    const container = messagesContainerRef.current;
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [scrollToBottom, shouldAutoScroll]);
   
   // Track if user manually scrolled
   const handleScroll = useCallback(() => {
@@ -239,6 +276,13 @@ export function ChatClient() {
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [input]);
+
+  // Auto-focus input after response completes
+  useEffect(() => {
+    if (!isStreaming && messages.length > 0 && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isStreaming, messages.length]);
 
   const sendMessage = useCallback(async (text: string) => {
     const userMessage: UIMessage = {

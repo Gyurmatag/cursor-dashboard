@@ -7,7 +7,7 @@ import type { Achievement } from '@/lib/achievements';
 
 export interface GetLeaderboardParams {
   limit?: number;
-  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days';
+  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd';
   sortBy?: 'totalActivityScore' | 'acceptedLinesAdded' | 'chatRequests' | 'composerRequests' | 'agentRequests';
 }
 
@@ -18,7 +18,7 @@ export interface GetAchievementsParams {
 }
 
 export interface GetTeamStatsParams {
-  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days';
+  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd';
   metric?: 'lines' | 'requests' | 'tabs' | 'all';
 }
 

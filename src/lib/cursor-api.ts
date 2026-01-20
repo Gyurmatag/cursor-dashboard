@@ -80,10 +80,12 @@ export const getDailyUsageData = cache(async (startDate: number, endDate: number
       throw new Error('API key not configured');
     }
 
-    // Validate date range (API limit is 30 days)
+    // Note: API limit is 30 days per request
+    // For ranges > 30 days, caller should use sequential requests
+    // See runCompleteHistoricalBackfill() in achievement-sync.ts
     const daysDiff = (endDate - startDate) / (1000 * 60 * 60 * 24);
     if (daysDiff > 30) {
-      throw new Error('Date range cannot exceed 30 days');
+      console.warn('Date range exceeds 30 days - API request may fail. Consider using sequential requests.');
     }
 
     const response = await fetch('https://api.cursor.com/teams/daily-usage-data', {

@@ -9,17 +9,22 @@ import { fetchLeaderboardData } from '@/lib/actions';
 import { calculateDateRange } from '@/lib/date-range-presets';
 import { ArrowRightIcon, MessageSquareIcon } from 'lucide-react';
 
+// Calculate date range once at module level
+// Use 90 days to show comprehensive historical data
+// Smart fetching handles this: API for ≤30 days, Database for >30 days
+const DASHBOARD_DATE_RANGE = calculateDateRange('90days');
+
 // Async server component for summary stats
+// Uses React.cache() internally via fetchLeaderboardData
 async function SummaryStatsAsync() {
-  const dateRange = calculateDateRange('30days');
-  const data = await fetchLeaderboardData(dateRange.startDate, dateRange.endDate);
+  const data = await fetchLeaderboardData(DASHBOARD_DATE_RANGE.startDate, DASHBOARD_DATE_RANGE.endDate);
   return <SummaryStats data={data} />;
 }
 
 // Async server component for dashboard charts
+// Uses React.cache() internally via fetchLeaderboardData
 async function DashboardChartsAsync() {
-  const dateRange = calculateDateRange('30days');
-  const data = await fetchLeaderboardData(dateRange.startDate, dateRange.endDate);
+  const data = await fetchLeaderboardData(DASHBOARD_DATE_RANGE.startDate, DASHBOARD_DATE_RANGE.endDate);
   return <DashboardCharts data={data} />;
 }
 
@@ -30,7 +35,7 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Last 30 days of AI activity</p>
+          <p className="text-sm sm:text-base text-muted-foreground">Complete AI activity history</p>
         </div>
         <Link href="/leaderboard" prefetch={true}>
           <Button variant="outline" className="gap-2 w-full sm:w-auto">
@@ -54,7 +59,7 @@ export default function DashboardPage() {
           <div>
             <h3 className="text-lg font-semibold">Ask Pulze AI Assistant</h3>
             <p className="text-sm text-muted-foreground">
-              Get instant insights about your team's AI usage with our intelligent chatbot
+              Get instant insights about your team&apos;s AI usage with our intelligent chatbot
             </p>
           </div>
           <Link href="/chat" prefetch={true}>

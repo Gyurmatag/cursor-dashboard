@@ -72,7 +72,7 @@ export interface CustomDateRange {
   to: Date;
 }
 
-// Date Range Preset Keys (max 30 days due to API limitation)
+// Date Range Preset Keys - supports unlimited historical data
 export type PresetKey = 
   | 'today'
   | 'yesterday'

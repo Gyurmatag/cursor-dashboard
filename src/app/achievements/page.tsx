@@ -5,17 +5,16 @@ import { createDb, userAchievements, teamAchievements, userStats, teamStats, syn
 import { AchievementGrid } from '@/components/achievement-grid';
 import { AchievementSectionBadge } from '@/components/achievement-section-badge';
 import { NotInPlanBanner } from '@/components/not-in-plan-banner';
-import { DataCollectionInfo } from '@/components/data-collection-info';
 import { SignInPrompt } from './sign-in-prompt';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeftIcon, TrophyIcon, ClockIcon, UserIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeftIcon, TrophyIcon, UserIcon } from 'lucide-react';
 import { getSession } from '@/lib/auth-server';
 import { INDIVIDUAL_ACHIEVEMENTS } from '@/lib/achievements';
 import { getSyncMetadata } from '@/lib/sync-metadata-kv';
 import { eq } from 'drizzle-orm';
 import { AchievementsTabs } from './achievements-tabs';
+import { LastSyncInfo } from '@/components/last-sync-info';
 
 // Force dynamic rendering since we need to access D1 database
 export const dynamic = 'force-dynamic';
@@ -47,15 +46,10 @@ export default function AchievementsPage() {
           </div>
           <div className="flex items-center gap-3">
             <Suspense fallback={<Skeleton className="h-10 w-32 rounded-lg" />}>
-              <LastSyncInfo />
+              <LastSyncInfoServer />
             </Suspense>
           </div>
         </div>
-
-        {/* Data Collection Info Banner */}
-        <Suspense fallback={<Skeleton className="h-24 w-full rounded-lg" />}>
-          <DataCollectionInfoSection />
-        </Suspense>
 
         {/* Achievements Tabs */}
         <AchievementsTabs
@@ -64,23 +58,6 @@ export default function AchievementsPage() {
         />
       </div>
     </div>
-  );
-}
-
-// Data collection info section - shows tracking period and limitations
-async function DataCollectionInfoSection() {
-  const { env } = await getCloudflareContext();
-  const kv = env.SYNC_KV;
-
-  // Fetch metadata from KV
-  const metadata = kv ? await getSyncMetadata(kv) : null;
-
-  // Pass only needed fields to client component (React best practice - minimize serialization)
-  return (
-    <DataCollectionInfo
-      startDate={metadata?.dataCollectionStartDate ?? null}
-      oldestDataDate={metadata?.oldestDataDate ?? null}
-    />
   );
 }
 
@@ -172,7 +149,7 @@ async function PersonalAchievementsContent() {
   );
 }
 
-async function LastSyncInfo() {
+async function LastSyncInfoServer() {
   const { env } = await getCloudflareContext();
   const kv = env.SYNC_KV;
   const db = createDb(env.DB);
@@ -196,46 +173,32 @@ async function LastSyncInfo() {
     lastSyncAt = syncData?.lastSyncAt ?? null;
   }
 
-  // Calculate next sync time (hourly at minute 0)
-  const nextSyncTime = lastSyncAt 
-    ? (() => {
-        const next = new Date(lastSyncAt);
-        next.setHours(next.getHours() + 1);
-        next.setMinutes(0);
-        next.setSeconds(0);
-        next.setMilliseconds(0);
-        return next;
-      })()
-    : null;
+  // Calculate next sync time based on cron schedule: "0 * * * *" (minute 0 of every hour)
+  // Cron runs in UTC, but we display it in user's local timezone (handled by client component)
+  // Next sync is always at the top of the next hour (XX:00:00)
+  const nextSyncTime = (() => {
+    const now = new Date();
+    const next = new Date(now);
+    
+    // Set to top of current hour
+    next.setMinutes(0);
+    next.setSeconds(0);
+    next.setMilliseconds(0);
+    
+    // If we're past minute 0 of current hour, move to next hour
+    if (next <= now) {
+      next.setHours(next.getHours() + 1);
+    }
+    
+    return next;
+  })();
 
-  // Explicit conditional rendering (React best practice)
-  if (!lastSyncAt) {
-    return (
-      <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <ClockIcon className="size-4" />
-          <span>Never synced</span>
-        </div>
-      </div>
-    );
-  }
-
+  // Pass ISO string dates to client component for timezone-aware formatting
   return (
-    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-      <div className="flex items-center gap-2">
-        <ClockIcon className="size-4" />
-        <span>Last sync: {format(lastSyncAt, 'MMM d, HH:mm')}</span>
-      </div>
-      {nextSyncTime ? (
-        <div className="flex items-center gap-2 pl-6">
-          <span>Next sync: {format(nextSyncTime, 'MMM d, HH:mm')}</span>
-        </div>
-      ) : null}
-      {dataCollectionStartDate ? (
-        <div className="flex items-center gap-2 pl-6">
-          <span>Tracking since: {format(new Date(dataCollectionStartDate), 'MMM d, yyyy')}</span>
-        </div>
-      ) : null}
-    </div>
+    <LastSyncInfo
+      lastSyncAt={lastSyncAt?.toISOString() ?? null}
+      nextSyncTime={nextSyncTime?.toISOString() ?? null}
+      dataCollectionStartDate={dataCollectionStartDate}
+    />
   );
 }
