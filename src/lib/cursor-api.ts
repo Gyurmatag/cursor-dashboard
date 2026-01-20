@@ -5,6 +5,10 @@ import type {
   DailyUsageRecord,
   DailyUsageResponse,
   LeaderboardEntry,
+  AICommitMetric,
+  AICommitMetricsResponse,
+  AICodeChange,
+  AICodeChangesResponse,
 } from '@/types/cursor';
 
 // Re-export types for convenience
@@ -13,6 +17,10 @@ export type {
   DailyUsageRecord,
   DailyUsageResponse,
   LeaderboardEntry,
+  AICommitMetric,
+  AICommitMetricsResponse,
+  AICodeChange,
+  AICodeChangesResponse,
 } from '@/types/cursor';
 
 /**
@@ -217,6 +225,8 @@ export function aggregateUserMetrics(
       name: member?.name || email.split('@')[0],
       totalActivityScore: activityScore,
       acceptedLinesAdded: userData.acceptedLinesAdded,
+      totalAccepts: userData.totalAccepts,
+      totalApplies: userData.totalApplies,
       chatRequests: userData.chatRequests,
       composerRequests: userData.composerRequests,
       agentRequests: userData.agentRequests,
@@ -229,4 +239,198 @@ export function aggregateUserMetrics(
 
   // Sort by activity score (descending)
   return entries.sort((a, b) => b.totalActivityScore - a.totalActivityScore);
+}
+
+// ============================================================================
+// AI Code Tracking API (Enterprise)
+// ============================================================================
+
+/**
+ * Helper to get API key from Cloudflare env
+ */
+async function getApiKey(): Promise<string> {
+  const { env } = await getCloudflareContext();
+  const apiKey = env.CURSOR_ADMIN_API_KEY as string;
+  if (!apiKey) {
+    throw new Error('CURSOR_ADMIN_API_KEY not configured');
+  }
+  return apiKey;
+}
+
+/**
+ * Get AI commit metrics with TAB, COMPOSER, and non-AI attribution
+ * 
+ * @param startDate - Start date (ISO string, "now", or relative like "7d")
+ * @param endDate - End date (ISO string, "now", or relative like "0d")
+ * @param page - Page number (1-based)
+ * @param pageSize - Results per page (max 1000)
+ * @param userEmail - Optional filter by user email
+ * @returns Paginated commit metrics
+ */
+export async function getAICommitMetrics(
+  startDate: string | number,
+  endDate: string | number,
+  page: number = 1,
+  pageSize: number = 1000,
+  userEmail?: string
+): Promise<AICommitMetricsResponse> {
+  const apiKey = await getApiKey();
+  
+  // Convert timestamps to ISO strings if needed
+  const start = typeof startDate === 'number' 
+    ? new Date(startDate).toISOString() 
+    : startDate;
+  const end = typeof endDate === 'number' 
+    ? new Date(endDate).toISOString() 
+    : endDate;
+  
+  const params = new URLSearchParams({
+    startDate: start,
+    endDate: end,
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  });
+  
+  if (userEmail) {
+    params.append('user', userEmail);
+  }
+  
+  const response = await fetch(
+    `https://api.cursor.com/analytics/ai-code/commits?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${btoa(`${apiKey}:`)}`,
+      },
+    }
+  );
+  
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`AI commit metrics request failed: ${response.status} ${text}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Get all AI commit metrics for a date range (handles pagination automatically)
+ * 
+ * @param startDate - Start date (ISO string, timestamp, or relative like "7d")
+ * @param endDate - End date (ISO string, timestamp, or relative like "0d")
+ * @param userEmail - Optional filter by user email
+ * @returns All commit metrics across all pages
+ */
+export async function getAllAICommitMetrics(
+  startDate: string | number,
+  endDate: string | number,
+  userEmail?: string
+): Promise<AICommitMetric[]> {
+  const allCommits: AICommitMetric[] = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const response = await getAICommitMetrics(startDate, endDate, page, 1000, userEmail);
+    allCommits.push(...response.items);
+    
+    hasMore = page * response.pageSize < response.totalCount;
+    page++;
+    
+    // Rate limiting: wait 100ms between requests
+    if (hasMore) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  return allCommits;
+}
+
+/**
+ * Get AI code change metrics with granular accepted AI changes
+ * 
+ * @param startDate - Start date (ISO string, "now", or relative like "7d")
+ * @param endDate - End date (ISO string, "now", or relative like "0d")
+ * @param page - Page number (1-based)
+ * @param pageSize - Results per page (max 1000)
+ * @param userEmail - Optional filter by user email
+ * @returns Paginated code changes
+ */
+export async function getAICodeChanges(
+  startDate: string | number,
+  endDate: string | number,
+  page: number = 1,
+  pageSize: number = 1000,
+  userEmail?: string
+): Promise<AICodeChangesResponse> {
+  const apiKey = await getApiKey();
+  
+  // Convert timestamps to ISO strings if needed
+  const start = typeof startDate === 'number' 
+    ? new Date(startDate).toISOString() 
+    : startDate;
+  const end = typeof endDate === 'number' 
+    ? new Date(endDate).toISOString() 
+    : endDate;
+  
+  const params = new URLSearchParams({
+    startDate: start,
+    endDate: end,
+    page: page.toString(),
+    pageSize: pageSize.toString(),
+  });
+  
+  if (userEmail) {
+    params.append('user', userEmail);
+  }
+  
+  const response = await fetch(
+    `https://api.cursor.com/analytics/ai-code/changes?${params}`,
+    {
+      method: 'GET',
+      headers: {
+        'Authorization': `Basic ${btoa(`${apiKey}:`)}`,
+      },
+    }
+  );
+  
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`AI code changes request failed: ${response.status} ${text}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Get all AI code changes for a date range (handles pagination automatically)
+ * 
+ * @param startDate - Start date (ISO string, timestamp, or relative like "7d")
+ * @param endDate - End date (ISO string, timestamp, or relative like "0d")
+ * @param userEmail - Optional filter by user email
+ * @returns All code changes across all pages
+ */
+export async function getAllAICodeChanges(
+  startDate: string | number,
+  endDate: string | number,
+  userEmail?: string
+): Promise<AICodeChange[]> {
+  const allChanges: AICodeChange[] = [];
+  let page = 1;
+  let hasMore = true;
+  
+  while (hasMore) {
+    const response = await getAICodeChanges(startDate, endDate, page, 1000, userEmail);
+    allChanges.push(...response.items);
+    
+    hasMore = page * response.pageSize < response.totalCount;
+    page++;
+    
+    // Rate limiting: wait 100ms between requests
+    if (hasMore) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+  
+  return allChanges;
 }

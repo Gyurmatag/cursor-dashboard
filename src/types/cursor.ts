@@ -51,6 +51,8 @@ export interface LeaderboardEntry {
   name: string;
   totalActivityScore: number;
   acceptedLinesAdded: number;
+  totalAccepts: number; // Accepted diffs count
+  totalApplies: number; // Total apply attempts
   chatRequests: number;
   composerRequests: number;
   agentRequests: number;
@@ -87,6 +89,75 @@ export type PresetKey =
   | 'ytd'
   | 'alltime'
   | 'custom';
+
+// ============================================================================
+// AI Code Tracking API Types (Enterprise)
+// ============================================================================
+
+/**
+ * AI Commit Metrics from /analytics/ai-code/commits
+ * Per-commit attribution of TAB, COMPOSER, and non-AI code
+ */
+export interface AICommitMetric {
+  commitHash: string;
+  userId: string;
+  userEmail: string;
+  repoName: string | null;
+  branchName: string | null;
+  isPrimaryBranch: boolean | null;
+  totalLinesAdded: number;
+  totalLinesDeleted: number;
+  tabLinesAdded: number;
+  tabLinesDeleted: number;
+  composerLinesAdded: number;
+  composerLinesDeleted: number;
+  nonAiLinesAdded: number | null;
+  nonAiLinesDeleted: number | null;
+  message: string | null;
+  commitTs: string | null;
+  createdAt: string;
+}
+
+/**
+ * AI Code Change Metrics from /analytics/ai-code/changes
+ * Granular accepted AI changes, independent of commits
+ */
+export interface AICodeChange {
+  changeId: string;
+  userId: string;
+  userEmail: string;
+  source: 'TAB' | 'COMPOSER';
+  model: string | null;
+  totalLinesAdded: number;
+  totalLinesDeleted: number;
+  createdAt: string;
+  metadata: Array<{
+    fileName?: string;
+    fileExtension: string;
+    linesAdded: number;
+    linesDeleted: number;
+  }>;
+}
+
+/**
+ * Paginated response for AI commit metrics
+ */
+export interface AICommitMetricsResponse {
+  items: AICommitMetric[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+/**
+ * Paginated response for AI code changes
+ */
+export interface AICodeChangesResponse {
+  items: AICodeChange[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
 
 // Sort Types
 export type SortDirection = 'asc' | 'desc';

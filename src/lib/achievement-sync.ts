@@ -435,15 +435,27 @@ async function processUsageData(
       // IMPORTANT: Use acceptedLinesAdded to match official Cursor dashboard "Agent Lines of Code"
       try {
         await db.run(sql`
-          INSERT INTO daily_snapshots (id, user_email, date, is_active, lines_added, agent_requests, chat_requests, composer_requests, tab_accepts)
-          VALUES (${crypto.randomUUID()}, ${email}, ${date}, ${record.isActive ? 1 : 0}, ${record.acceptedLinesAdded}, ${record.agentRequests}, ${record.chatRequests}, ${record.composerRequests}, ${record.totalTabsAccepted})
+          INSERT INTO daily_snapshots (
+            id, user_email, date, is_active, lines_added, agent_requests, 
+            chat_requests, composer_requests, tab_accepts, total_accepts, 
+            total_applies, most_used_model
+          )
+          VALUES (
+            ${crypto.randomUUID()}, ${email}, ${date}, ${record.isActive ? 1 : 0}, 
+            ${record.acceptedLinesAdded}, ${record.agentRequests}, ${record.chatRequests}, 
+            ${record.composerRequests}, ${record.totalTabsAccepted}, ${record.totalAccepts},
+            ${record.totalApplies}, ${record.mostUsedModel || ''}
+          )
           ON CONFLICT(user_email, date) DO UPDATE SET
             is_active = ${record.isActive ? 1 : 0},
             lines_added = ${record.acceptedLinesAdded},
             agent_requests = ${record.agentRequests},
             chat_requests = ${record.chatRequests},
             composer_requests = ${record.composerRequests},
-            tab_accepts = ${record.totalTabsAccepted}
+            tab_accepts = ${record.totalTabsAccepted},
+            total_accepts = ${record.totalAccepts},
+            total_applies = ${record.totalApplies},
+            most_used_model = ${record.mostUsedModel || ''}
         `);
       } catch (err) {
         // Log but don't fail on individual record errors

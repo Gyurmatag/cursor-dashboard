@@ -82,6 +82,9 @@ export const dailySnapshots = sqliteTable('daily_snapshots', {
   chatRequests: integer('chat_requests').default(0).notNull(),
   composerRequests: integer('composer_requests').default(0).notNull(),
   tabAccepts: integer('tab_accepts').default(0).notNull(),
+  totalAccepts: integer('total_accepts').default(0).notNull(),
+  totalApplies: integer('total_applies').default(0).notNull(),
+  mostUsedModel: text('most_used_model').default(''),
 }, (table) => [
   // Unique constraint on user + date combination
   uniqueIndex('daily_snapshots_unique_idx').on(table.userEmail, table.date),
