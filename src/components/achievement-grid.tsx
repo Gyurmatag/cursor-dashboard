@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import {
   INDIVIDUAL_ACHIEVEMENTS,
@@ -13,32 +13,33 @@ import {
 } from '@/lib/achievements';
 import type { UserAchievement, TeamAchievement, UserStats, TeamStats } from '@/db/schema';
 import { AchievementCard, AchievementCardSkeleton } from './achievement-card';
-import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { UserIcon, UsersIcon } from 'lucide-react';
+
+type AchievementType = 'individual' | 'team';
 
 interface AchievementGridProps {
-  userAchievements: UserAchievement[];
-  teamAchievements: TeamAchievement[];
-  userStats: UserStats | null;
-  teamStats: TeamStats | null;
+  type: AchievementType;
+  userAchievements?: UserAchievement[];
+  teamAchievements?: TeamAchievement[];
+  userStats?: UserStats | null;
+  teamStats?: TeamStats | null;
   selectedUser?: string;
 }
 
 export function AchievementGrid({
-  userAchievements,
-  teamAchievements,
+  type,
+  userAchievements = [],
+  teamAchievements = [],
   userStats,
   teamStats,
   selectedUser,
 }: AchievementGridProps) {
-  const [activeTab, setActiveTab] = useState<'individual' | 'team'>('individual');
-
   // Filter user achievements by selected user
   const filteredUserAchievements = useMemo(() => {
+    if (type !== 'individual') return [];
     if (!selectedUser) return userAchievements;
     return userAchievements.filter((a) => a.userEmail === selectedUser);
-  }, [userAchievements, selectedUser]);
+  }, [type, userAchievements, selectedUser]);
 
   // Create lookup sets for earned achievements
   const earnedUserAchievementIds = useMemo(
@@ -78,20 +79,20 @@ export function AchievementGrid({
 
   // Calculate progress for achievements
   const calculateProgress = (achievement: Achievement): number => {
-    if (activeTab === 'individual' && userStats) {
+    if (type === 'individual' && userStats) {
       return achievement.progressFn(userStats);
     }
-    if (activeTab === 'team' && teamStats) {
+    if (type === 'team' && teamStats) {
       return achievement.progressFn(teamStats);
     }
     return 0;
   };
 
-  // Get achievements and categories for current tab
-  const achievements = activeTab === 'individual' ? INDIVIDUAL_ACHIEVEMENTS : TEAM_ACHIEVEMENTS;
-  const categories = activeTab === 'individual' ? getIndividualCategories() : getTeamCategories();
-  const earnedIds = activeTab === 'individual' ? earnedUserAchievementIds : earnedTeamAchievementIds;
-  const achievementDates = activeTab === 'individual' ? userAchievementDates : teamAchievementDates;
+  // Get achievements and categories for current type
+  const achievements = type === 'individual' ? INDIVIDUAL_ACHIEVEMENTS : TEAM_ACHIEVEMENTS;
+  const categories = type === 'individual' ? getIndividualCategories() : getTeamCategories();
+  const earnedIds = type === 'individual' ? earnedUserAchievementIds : earnedTeamAchievementIds;
+  const achievementDates = type === 'individual' ? userAchievementDates : teamAchievementDates;
 
   // Calculate completion stats
   const totalCount = achievements.length;
@@ -112,38 +113,16 @@ export function AchievementGrid({
 
   return (
     <div className="space-y-6">
-      {/* Tab buttons */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex gap-2">
-          <Button
-            variant={activeTab === 'individual' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('individual')}
-            className="gap-2"
-          >
-            <UserIcon className="size-4" />
-            My Achievements
-          </Button>
-          <Button
-            variant={activeTab === 'team' ? 'default' : 'outline'}
-            onClick={() => setActiveTab('team')}
-            className="gap-2"
-          >
-            <UsersIcon className="size-4" />
-            Team Achievements
-          </Button>
+      {/* Progress summary */}
+      <div className="flex items-center gap-3 justify-end">
+        <div className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{earnedCount}</span>
+          <span> / {totalCount}</span>
         </div>
-
-        {/* Progress summary */}
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{earnedCount}</span>
-            <span> / {totalCount}</span>
-          </div>
-          <div className="w-32">
-            <Progress value={completionPercentage} className="h-2" />
-          </div>
-          <span className="text-sm font-medium">{Math.round(completionPercentage)}%</span>
+        <div className="w-32">
+          <Progress value={completionPercentage} className="h-2" />
         </div>
+        <span className="text-sm font-medium">{Math.round(completionPercentage)}%</span>
       </div>
 
       {/* Achievement categories */}
@@ -189,16 +168,11 @@ export function AchievementGrid({
 export function AchievementGridSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Tab buttons skeleton */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex gap-2">
-          <div className="h-10 w-36 bg-muted rounded-lg animate-pulse" />
-          <div className="h-10 w-40 bg-muted rounded-lg animate-pulse" />
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="h-4 w-16 bg-muted rounded animate-pulse" />
-          <div className="h-2 w-32 bg-muted rounded-full animate-pulse" />
-        </div>
+      {/* Progress summary skeleton */}
+      <div className="flex items-center justify-end gap-3">
+        <div className="h-4 w-16 bg-muted rounded animate-pulse" />
+        <div className="h-2 w-32 bg-muted rounded-full animate-pulse" />
+        <div className="h-4 w-10 bg-muted rounded animate-pulse" />
       </div>
 
       {/* Category sections skeleton */}
