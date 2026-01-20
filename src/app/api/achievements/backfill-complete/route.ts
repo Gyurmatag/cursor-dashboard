@@ -3,7 +3,7 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { createDb } from '@/db';
 import { runCompleteHistoricalBackfill } from '@/lib/achievement-sync';
 
-export const runtime = 'edge';
+// Using Node.js runtime for long-running backfill operation
 export const maxDuration = 60; // Allow up to 60 seconds for complete backfill
 
 /**
