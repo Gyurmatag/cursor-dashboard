@@ -17,7 +17,6 @@ import { PulseIcon } from '@/components/chat/pulse-icon';
 import { ToolResultErrorBoundary } from '@/components/chat/error-boundary';
 import { ToolResultRenderer } from '@/components/chat';
 import { Response } from '@/components/ai-elements/response';
-import type { UIMessage } from 'ai';
 import type { SuggestedPromptCardProps, MessageBubbleProps, ToolResultPart } from '@/components/chat/types';
 import { SUGGESTED_PROMPTS, COPY_FEEDBACK_TIMEOUT } from '@/components/chat/constants';
 import { useChatStream } from '@/components/chat/hooks/use-chat-stream';
@@ -186,7 +185,7 @@ export function ChatClient() {
 
   // Custom hooks
   const { messages, isStreaming, error, sendMessage, stop } = useChatStream();
-  const { messagesContainerRef, messagesEndRef, shouldAutoScroll, setShouldAutoScroll, handleScroll } =
+  const { messagesContainerRef, messagesEndRef, setShouldAutoScroll, handleScroll } =
     useAutoScroll({ messagesLength: messages.length, isStreaming });
   const textareaRef = useTextareaResize(input);
 
