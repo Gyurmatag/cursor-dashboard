@@ -1,35 +1,32 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback, memo, useMemo } from 'react';
+import { useState, useCallback, useEffect, memo, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
-import { 
-  SendIcon, 
+import {
+  SendIcon,
   UserIcon,
   XIcon,
   CopyIcon,
   CheckIcon,
   SparklesIcon,
-  TrophyIcon,
-  BarChartIcon,
-  UsersIcon,
 } from 'lucide-react';
 import { PulseIcon } from '@/components/chat/pulse-icon';
-import { LeaderboardCard, AchievementDisplay, UserProfileCard } from '@/components/chat';
 import { ToolResultErrorBoundary } from '@/components/chat/error-boundary';
+import { ToolResultRenderer } from '@/components/chat';
 import { Response } from '@/components/ai-elements/response';
 import type { UIMessage } from 'ai';
-import type { LeaderboardResult, AchievementResult, UserProfileResult } from '@/types/chat';
+import type { SuggestedPromptCardProps, MessageBubbleProps, ToolResultPart } from '@/components/chat/types';
+import { SUGGESTED_PROMPTS, COPY_FEEDBACK_TIMEOUT } from '@/components/chat/constants';
+import { useChatStream } from '@/components/chat/hooks/use-chat-stream';
+import { useAutoScroll } from '@/components/chat/hooks/use-auto-scroll';
+import { useTextareaResize } from '@/components/chat/hooks/use-textarea-resize';
 
-const SUGGESTED_PROMPTS = [
-  { icon: TrophyIcon, label: 'Top 3 AI Users', prompt: 'Show me the top 3 AI users this week' },
-  { icon: SparklesIcon, label: 'Achievement Overview', prompt: 'What legendary achievements does our team have?' },
-  { icon: BarChartIcon, label: 'Team Stats', prompt: "What's our team's total productivity score this month?" },
-  { icon: UsersIcon, label: 'User Comparison', prompt: 'Compare the top 5 users by agent requests' },
-] as const;
-
+/**
+ * Typing indicator component
+ */
 const TypingIndicator = memo(() => (
   <div className="flex gap-3">
     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -47,15 +44,14 @@ const TypingIndicator = memo(() => (
 ));
 TypingIndicator.displayName = 'TypingIndicator';
 
-const SuggestedPromptCard = memo(({ icon: Icon, label, prompt, onClick }: {
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  prompt: string;
-  onClick: (prompt: string) => void;
-}) => (
+/**
+ * Suggested prompt card component
+ */
+const SuggestedPromptCard = memo<SuggestedPromptCardProps>(({ icon: Icon, label, prompt, onClick }) => (
   <button
     onClick={() => onClick(prompt)}
     className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent transition-colors text-left"
+    type="button"
   >
     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
       <Icon className="w-5 h-5 text-primary" />
@@ -68,77 +64,69 @@ const SuggestedPromptCard = memo(({ icon: Icon, label, prompt, onClick }: {
 ));
 SuggestedPromptCard.displayName = 'SuggestedPromptCard';
 
-const MessageBubble = memo(({ message }: { message: UIMessage }) => {
+/**
+ * Message bubble component
+ */
+const MessageBubble = memo<MessageBubbleProps>(({ message }) => {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
   const hasToolInvocations = message.parts.some(p => p.type === 'tool-result');
-  
-  // Memoize text content extraction to avoid recreating callback on every message update
-  const textContent = useMemo(() => 
-    message.parts
-      .filter(p => p.type === 'text')
-      .map(p => p.type === 'text' ? p.text : '')
-      .join(''),
+
+  // Memoize text content extraction
+  const textContent = useMemo(
+    () =>
+      message.parts
+        .filter(p => p.type === 'text')
+        .map(p => (p.type === 'text' ? p.text : ''))
+        .join(''),
     [message.parts]
   );
-  
+
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(textContent);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    setTimeout(() => setCopied(false), COPY_FEEDBACK_TIMEOUT);
   }, [textContent]);
-  
+
   return (
-    <div
-      className={cn(
-        'flex gap-3 group',
-        isUser ? 'justify-end' : 'justify-start'
-      )}
-    >
+    <div className={cn('flex gap-3 group', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
           <PulseIcon className="w-4 h-4 text-primary" />
         </div>
       )}
-      
+
       <div className={cn('max-w-[85%] space-y-3', !isUser && hasToolInvocations && 'max-w-[90%]')}>
         {/* Text content */}
-        {message.parts.some(p => p.type === 'text' && p.text !== '[Data retrieved]') && (
+        {message.parts.some(p => p.type === 'text') && (
           <div
             className={cn(
               'rounded-2xl px-4 py-3 relative',
-              isUser
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted'
+              isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'
             )}
           >
             {message.parts.map((part, index) => {
-              if (part.type === 'text' && part.text !== '[Data retrieved]') {
+              if (part.type === 'text') {
                 return isUser ? (
                   <p key={index} className="whitespace-pre-wrap break-words">
                     {part.text}
                   </p>
                 ) : (
-                  <Response key={index}>
-                    {part.text}
-                  </Response>
+                  <Response key={index}>{part.text}</Response>
                 );
               }
               return null;
             })}
-            
+
             {/* Copy button */}
             {!isUser && (
               <button
                 onClick={handleCopy}
                 className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-background/10 rounded"
                 title="Copy message"
+                type="button"
               >
-                {copied ? (
-                  <CheckIcon className="w-3 h-3" />
-                ) : (
-                  <CopyIcon className="w-3 h-3" />
-                )}
+                {copied ? <CheckIcon className="w-3 h-3" /> : <CopyIcon className="w-3 h-3" />}
               </button>
             )}
           </div>
@@ -147,44 +135,35 @@ const MessageBubble = memo(({ message }: { message: UIMessage }) => {
         {/* Tool results */}
         {message.parts.map((part, index) => {
           if (part.type === 'tool-result') {
-            // Type assertion for tool result with toolName and result properties
-            const toolPart = part as unknown as { type: 'tool-result'; toolName: string; result: unknown };
-            const toolName = toolPart.toolName;
-            const result = toolPart.result;
+            const toolPart = part as unknown as ToolResultPart;
+            const { toolName, result } = toolPart;
 
             return (
-              <ToolResultErrorBoundary key={index}>
-                {(() => {
-                  // Render different components based on tool
-                  if (toolName === 'getLeaderboard' && result && typeof result === 'object' && 'entries' in result) {
-                    return <LeaderboardCard data={result as LeaderboardResult} />;
-                  }
-                  
-                  if (toolName === 'getAchievements' && result && typeof result === 'object' && 'achievements' in result) {
-                    return <AchievementDisplay data={result as AchievementResult} />;
-                  }
-
-                  if (toolName === 'getUserProfile' && result && typeof result === 'object' && 'user' in result) {
-                    return <UserProfileCard data={result as UserProfileResult} />;
-                  }
-
-                  // Fallback for other tools
-                  return (
-                    <Card className="p-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                        <SparklesIcon className="w-4 h-4" />
-                        <span>{toolName} result</span>
-                      </div>
-                      <pre className="text-xs overflow-auto max-h-96">
-                        {JSON.stringify(result, null, 2)}
-                      </pre>
-                    </Card>
-                  );
-                })()}
+              <ToolResultErrorBoundary
+                key={index}
+                fallback={
+                  <Card className="p-4 border-destructive/50">
+                    <div className="flex items-center gap-2 text-sm text-destructive mb-2">
+                      <SparklesIcon className="w-4 h-4" />
+                      <span>Error displaying {toolName} result</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {result && typeof result === 'object' ? (
+                        <pre className="text-xs overflow-auto max-h-96 bg-muted p-2 rounded">
+                          {JSON.stringify(result, null, 2)}
+                        </pre>
+                      ) : (
+                        <p>Unable to display result. Please try asking your question differently.</p>
+                      )}
+                    </div>
+                  </Card>
+                }
+              >
+                <ToolResultRenderer toolName={toolName} result={result} />
               </ToolResultErrorBoundary>
             );
           }
-          
+
           return null;
         })}
       </div>
@@ -199,265 +178,27 @@ const MessageBubble = memo(({ message }: { message: UIMessage }) => {
 });
 MessageBubble.displayName = 'MessageBubble';
 
+/**
+ * Main chat client component
+ */
 export function ChatClient() {
   const [input, setInput] = useState('');
-  const [messages, setMessages] = useState<UIMessage[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const abortControllerRef = useRef<AbortController | null>(null);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Smart auto-scroll with support for dynamic content rendering
-  const scrollToBottom = useCallback(() => {
-    if (!messagesContainerRef.current || !shouldAutoScroll) return;
-    
-    const container = messagesContainerRef.current;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-    
-    if (isNearBottom || messages.length === 1) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages.length, shouldAutoScroll]);
 
-  // Scroll when messages change
-  useEffect(() => {
-    scrollToBottom();
-    
-    // Also scroll after a short delay to handle dynamically rendered components
-    if (scrollTimeoutRef.current) {
-      clearTimeout(scrollTimeoutRef.current);
-    }
-    scrollTimeoutRef.current = setTimeout(() => {
-      scrollToBottom();
-    }, 100);
-
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-    };
-  }, [messages, scrollToBottom]);
-
-  // Observe content height changes for dynamic UI components
-  useEffect(() => {
-    if (!messagesContainerRef.current || !shouldAutoScroll) return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      scrollToBottom();
-    });
-
-    // Observe the messages container for size changes
-    const container = messagesContainerRef.current;
-    resizeObserver.observe(container);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [scrollToBottom, shouldAutoScroll]);
-  
-  // Track if user manually scrolled
-  const handleScroll = useCallback(() => {
-    if (!messagesContainerRef.current) return;
-    
-    const container = messagesContainerRef.current;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-    setShouldAutoScroll(isNearBottom);
-  }, []);
-  
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
-    }
-  }, [input]);
+  // Custom hooks
+  const { messages, isStreaming, error, sendMessage, stop } = useChatStream();
+  const { messagesContainerRef, messagesEndRef, shouldAutoScroll, setShouldAutoScroll, handleScroll } =
+    useAutoScroll({ messagesLength: messages.length, isStreaming });
+  const textareaRef = useTextareaResize(input);
 
   // Auto-focus input after response completes
   useEffect(() => {
     if (!isStreaming && messages.length > 0 && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [isStreaming, messages.length]);
+  }, [isStreaming, messages.length, textareaRef]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    const userMessage: UIMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      parts: [{ type: 'text', text }],
-    };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setIsStreaming(true);
-    setError(null);
-    
-    // Create abort controller
-    abortControllerRef.current = new AbortController();
-    
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-        signal: abortControllerRef.current.signal,
-      });
-      
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-      
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      
-      const aiMessage: UIMessage = {
-        id: `assistant-${Date.now()}`,
-        role: 'assistant',
-        parts: [],
-      };
-      
-      // Add AI message placeholder immediately
-      setMessages(prev => [...prev, aiMessage]);
-      const messageIndex = messages.length + 1; // Position of AI message in current state
-      const toolCallMap = new Map<string, string>(); // toolCallId -> toolName
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-        
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
-          
-          try {
-            const event = JSON.parse(data);
-            
-            if (event.type === 'text-start' || event.type === 'text-delta') {
-              if (event.type === 'text-delta') {
-                const textPart = aiMessage.parts.find(p => p.type === 'text') as { type: 'text'; text: string } | undefined;
-                if (textPart) {
-                  textPart.text += event.delta;
-                } else {
-                  aiMessage.parts.push({ type: 'text', text: event.delta });
-                }
-                
-                // Update messages array
-                setMessages(prev => {
-                  const newMessages = [...prev];
-                  newMessages[messageIndex] = { ...aiMessage };
-                  return newMessages;
-                });
-              }
-            }
-            
-            if (event.type === 'tool-input-available') {
-              // Track tool call ID to tool name mapping
-              toolCallMap.set(event.toolCallId, event.toolName);
-            }
-            
-            if (event.type === 'tool-output-available') {
-              const toolName = toolCallMap.get(event.toolCallId) || 'unknown';
-              const toolResultPart = {
-                type: 'tool-result' as const,
-                toolCallId: event.toolCallId,
-                toolName: toolName,
-                result: event.output,
-              };
-              aiMessage.parts.push(toolResultPart as never);
-              
-              // Update messages array
-              setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[messageIndex] = { ...aiMessage };
-                return newMessages;
-              });
-            }
-
-            if (event.type === 'tool-output-error') {
-              // Add error as text message
-              const errorText = `❌ Error: ${event.errorText}`;
-              const existingTextPart = aiMessage.parts.find(p => p.type === 'text') as { type: 'text'; text: string } | undefined;
-              
-              if (existingTextPart) {
-                existingTextPart.text += '\n' + errorText;
-              } else {
-                aiMessage.parts.push({ type: 'text', text: errorText });
-              }
-              
-              // Update messages array
-              setMessages(prev => {
-                const newMessages = [...prev];
-                newMessages[messageIndex] = { ...aiMessage };
-                return newMessages;
-              });
-            }
-            
-            if (event.type === 'finish') {
-              // If assistant message has no text but has tool results, add a placeholder text
-              // This prevents empty messages from being filtered out by the API
-              const hasText = aiMessage.parts.some(p => p.type === 'text' && p.text?.trim());
-              const hasTools = aiMessage.parts.some(p => p.type === 'tool-result');
-              
-              if (!hasText && hasTools) {
-                aiMessage.parts.unshift({ type: 'text', text: '[Data retrieved]' });
-              }
-            }
-          } catch (e) {
-            console.error('[Stream parse]', e);
-          }
-        }
-      }
-      
-      // Final update to ensure message is saved
-      setMessages(prev => {
-        const newMessages = [...prev];
-        if (newMessages[messageIndex]) {
-          newMessages[messageIndex] = aiMessage;
-        } else {
-          newMessages.push(aiMessage);
-        }
-        return newMessages;
-      });
-      
-    } catch (err) {
-      if (err instanceof Error && err.name !== 'AbortError') {
-        console.error('[Send error]', err);
-        setError(err);
-      }
-    } finally {
-      setIsStreaming(false);
-      abortControllerRef.current = null;
-    }
-  }, [messages]);
-
-  const stop = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsStreaming(false);
-    }
-  }, []);
-
-  const onSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (trimmed && !isStreaming) {
-      sendMessage(trimmed);
-      setInput('');
-      setShouldAutoScroll(true);
-    }
-  }, [input, isStreaming, sendMessage]);
-
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
       e.preventDefault();
       const trimmed = input.trim();
       if (trimmed && !isStreaming) {
@@ -465,24 +206,42 @@ export function ChatClient() {
         setInput('');
         setShouldAutoScroll(true);
       }
-    }
-  }, [input, isStreaming, sendMessage]);
+    },
+    [input, isStreaming, sendMessage, setShouldAutoScroll]
+  );
 
-  const handleSuggestedPromptClick = useCallback((prompt: string) => {
-    if (!isStreaming) {
-      sendMessage(prompt);
-      setShouldAutoScroll(true);
-    }
-  }, [isStreaming, sendMessage]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const trimmed = input.trim();
+        if (trimmed && !isStreaming) {
+          sendMessage(trimmed);
+          setInput('');
+          setShouldAutoScroll(true);
+        }
+      }
+    },
+    [input, isStreaming, sendMessage, setShouldAutoScroll]
+  );
+
+  const handleSuggestedPromptClick = useCallback(
+    (prompt: string) => {
+      if (!isStreaming) {
+        sendMessage(prompt);
+        setShouldAutoScroll(true);
+      }
+    },
+    [isStreaming, sendMessage, setShouldAutoScroll]
+  );
 
   const isReady = !isStreaming;
 
   return (
     <div className="container mx-auto max-w-6xl p-6 h-[calc(100vh-4rem)] flex flex-col">
-      {/* Chat Container */}
       <Card className="flex-1 flex flex-col overflow-hidden">
         {/* Messages Area */}
-        <div 
+        <div
           ref={messagesContainerRef}
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto p-4 space-y-4"
@@ -496,7 +255,7 @@ export function ChatClient() {
                   </div>
                   <h2 className="text-xl font-semibold">Start a conversation</h2>
                   <p className="text-muted-foreground">
-                    Ask me anything about your team&apos;s AI usage, productivity metrics, 
+                    Ask me anything about your team&apos;s AI usage, productivity metrics,
                     achievements, or get insights from the dashboard data.
                   </p>
                 </div>
@@ -523,12 +282,12 @@ export function ChatClient() {
               {messages.map((message) => (
                 <MessageBubble key={message.id} message={message} />
               ))}
-              
+
               {/* Typing indicator */}
               {isStreaming && <TypingIndicator />}
             </>
           )}
-          
+
           {/* Error display */}
           {error && (
             <div className="flex justify-center">
@@ -537,25 +296,29 @@ export function ChatClient() {
               </div>
             </div>
           )}
-          
+
           <div ref={messagesEndRef} />
         </div>
 
         {/* Input Area */}
         <div className="border-t p-4">
-          <form onSubmit={onSubmit} className="flex gap-3 items-end">
+          <form onSubmit={handleSubmit} className="flex gap-3 items-end">
             <Textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={isStreaming ? "Pulse is responding..." : "Ask about team metrics, users, or achievements... (Enter to send, Shift+Enter for new line)"}
+              placeholder={
+                isStreaming
+                  ? 'Pulse is responding...'
+                  : 'Ask about team metrics, users, or achievements... (Enter to send, Shift+Enter for new line)'
+              }
               className="min-h-[44px] max-h-[200px] resize-none"
               disabled={!isReady}
               rows={1}
             />
             {isStreaming ? (
-              <Button 
+              <Button
                 type="button"
                 variant="destructive"
                 size="icon"
@@ -566,8 +329,8 @@ export function ChatClient() {
                 <XIcon className="w-5 h-5" />
               </Button>
             ) : (
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 size="icon"
                 disabled={!input.trim() || !isReady}
                 className="h-11 w-11 flex-shrink-0"

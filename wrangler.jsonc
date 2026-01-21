@@ -81,8 +81,9 @@
 
   // Environment Variables
   // https://developers.cloudflare.com/workers/configuration/secrets/
+  // Uncomment and set your production domain:
   // "vars": {
-  //   "BETTER_AUTH_URL": "https://your-production-domain.com"
+  //   "WORKER_DOMAIN": "cursor-dashboard.cfi-ops.workers.dev"
   // }
 
   // ============================================================================
@@ -103,10 +104,15 @@
   //    wrangler secret put BETTER_AUTH_URL
   //    (Enter your production URL, e.g.: https://cursor-dashboard.example.com)
   //
+  // 4. Cron Secret (for scheduled task authentication):
+  //    wrangler secret put CRON_SECRET
+  //    (Enter a secure random string, e.g.: openssl rand -base64 32)
+  //
   // For local development, create a .dev.vars file with:
   //   GOOGLE_CLIENT_SECRET=your_google_client_secret
   //   BETTER_AUTH_SECRET=your_random_secret_for_dev
   //   BETTER_AUTH_URL=http://localhost:3000
+  //   CRON_SECRET=your_random_cron_secret
   //
   // ============================================================================
 }

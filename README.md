@@ -80,6 +80,8 @@ Create a `.dev.vars` file in the project root:
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 BETTER_AUTH_SECRET=your_random_secret_for_dev
 BETTER_AUTH_URL=http://localhost:3000
+CRON_SECRET=your_random_cron_secret
+CURSOR_API_KEY=your_cursor_api_key
 ```
 
 4. Set up the database:
@@ -108,6 +110,9 @@ npm run dev
 
 # Build for production
 npm run build
+
+# Build for Cloudflare (includes cron patch)
+npm run build:cf
 
 # Start production server locally
 npm start
@@ -157,6 +162,12 @@ wrangler secret put BETTER_AUTH_SECRET
 
 # Production URL
 wrangler secret put BETTER_AUTH_URL
+
+# Cron Secret for scheduled tasks (generate with: openssl rand -base64 32)
+wrangler secret put CRON_SECRET
+
+# Cursor API Key for data sync
+wrangler secret put CURSOR_API_KEY
 ```
 
 3. Create D1 database:
@@ -236,6 +247,9 @@ The app runs hourly synchronization via Cloudflare Cron:
 - **Schedule**: `0 * * * *` (every hour at minute 0)
 - **Endpoint**: `/api/cron/sync`
 - **Purpose**: Fetches latest data from Cursor API and updates achievements
+- **Authentication**: Uses `CRON_SECRET` for secure cron trigger authentication
+
+For detailed cron setup instructions, see [CRON_SETUP.md](./CRON_SETUP.md)
 
 ## Authentication
 

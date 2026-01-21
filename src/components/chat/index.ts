@@ -6,3 +6,5 @@ export { UserComparisonTable } from './user-comparison-table';
 export { UserProfileCard } from './user-profile-card';
 export { ToolResultWrapper } from './tool-result-wrapper';
 export { ToolResultErrorBoundary } from './error-boundary';
+export { TeamStatsCard } from './team-stats-card';
+export { ToolResultRenderer } from './tool-result-renderer';

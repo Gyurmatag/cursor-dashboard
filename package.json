@@ -5,10 +5,11 @@
 	"scripts": {
 		"dev": "next dev --turbopack",
 		"build": "next build",
+		"build:cf": "opennextjs-cloudflare build && node scripts/patch-worker-cron.mjs",
 		"start": "next start",
 		"lint": "next lint",
-		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+		"deploy": "npm run build:cf && opennextjs-cloudflare deploy",
+		"preview": "npm run build:cf && opennextjs-cloudflare preview",
 		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "npx wrangler d1 migrations apply cursor-achievements --remote",

@@ -40,6 +40,23 @@ function getTierBorderClass(tier: AchievementTier, isUnlocked: boolean): string 
   }
 }
 
+// Map category color names to Tailwind color values
+function getCategoryProgressColor(categoryColor: string): string {
+  const colorMap: Record<string, string> = {
+    'emerald': 'rgb(16 185 129)', // emerald-500
+    'amber': 'rgb(245 158 11)',   // amber-500
+    'blue': 'rgb(59 130 246)',    // blue-500
+    'violet': 'rgb(139 92 246)',  // violet-500
+    'cyan': 'rgb(6 182 212)',     // cyan-500
+    'red': 'rgb(239 68 68)',      // red-500
+    'green': 'rgb(34 197 94)',    // green-500
+    'purple': 'rgb(168 85 247)',  // purple-500
+    'pink': 'rgb(236 72 153)',    // pink-500
+    'orange': 'rgb(249 115 22)',  // orange-500
+  };
+  return colorMap[categoryColor] || 'rgb(59 130 246)'; // default to blue
+}
+
 export function AchievementCard({
   achievement,
   isUnlocked,
@@ -118,13 +135,13 @@ export function AchievementCard({
                 </Badge>
                 {progress > 0 && (
                   <div className="w-full">
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-muted-foreground/20 border border-muted-foreground/10 rounded-full overflow-hidden">
                       <div
-                        className={cn(
-                          'h-full rounded-full transition-all duration-500',
-                          `bg-${categoryColor}-500`
-                        )}
-                        style={{ width: `${Math.min(progress, 100)}%` }}
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ 
+                          width: `${Math.min(progress, 100)}%`,
+                          backgroundColor: getCategoryProgressColor(categoryColor),
+                        }}
                       />
                     </div>
                     <p className="text-[10px] text-muted-foreground text-center mt-1">
