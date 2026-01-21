@@ -7,7 +7,7 @@ import type { Achievement } from '@/lib/achievements';
 
 export interface GetLeaderboardParams {
   limit?: number;
-  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd';
+  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd' | 'alltime';
   sortBy?: 'totalActivityScore' | 'acceptedLinesAdded' | 'chatRequests' | 'composerRequests' | 'agentRequests';
 }
 
@@ -18,13 +18,14 @@ export interface GetAchievementsParams {
 }
 
 export interface GetTeamStatsParams {
-  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd';
+  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd' | 'alltime';
   metric?: 'lines' | 'requests' | 'tabs' | 'all';
 }
 
 export interface GetUserProfileParams {
   email?: string;
   name?: string;
+  dateRange?: 'today' | 'yesterday' | '7days' | '14days' | '30days' | '60days' | '90days' | 'mtd' | 'ytd' | 'qtd' | 'alltime';
 }
 
 /**

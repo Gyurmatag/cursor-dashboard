@@ -27,7 +27,7 @@ export const getLeaderboardTool = tool({
   description: 'Get the top AI users leaderboard with activity scores, lines of code, and usage metrics. Use this to answer questions about top performers, user rankings, or who is using AI the most.',
   inputSchema: z.object({
     limit: z.number().int().min(1).max(50).optional(),
-    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd']).optional(),
+    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd', 'alltime']).optional(),
     sortBy: z.enum(['totalActivityScore', 'acceptedLinesAdded', 'chatRequests', 'composerRequests', 'agentRequests']).optional(),
   }),
   execute: async (params: GetLeaderboardParams): Promise<LeaderboardResult> => {
@@ -168,7 +168,7 @@ export const getAchievementsTool = tool({
 export const getTeamStatsTool = tool({
   description: 'Get aggregate team statistics including total lines of code, AI requests, active members, and daily trends. Use this to answer questions about overall team productivity, usage patterns, or collective metrics.',
   inputSchema: z.object({
-    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd']).optional(),
+    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd', 'alltime']).optional(),
     metric: z.enum(['lines', 'requests', 'tabs', 'all']).optional(),
   }),
   execute: async (params: GetTeamStatsParams): Promise<TeamStatsResult> => {
@@ -320,9 +320,10 @@ export const getUserProfileTool = tool({
   inputSchema: z.object({
     email: z.string().optional(),
     name: z.string().optional(),
+    dateRange: z.enum(['today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd', 'alltime']).optional(),
   }),
   execute: async (params: GetUserProfileParams): Promise<UserProfileResult> => {
-    const { email, name } = params;
+    const { email, name, dateRange = '30days' } = params;
 
     // Validate that at least one search parameter is provided
     if (!email && !name) {
@@ -351,8 +352,8 @@ export const getUserProfileTool = tool({
       throw new Error(`User not found: ${email || name}. Please try with a different name or check the spelling.`);
     }
 
-    // Fetch user data for last 30 days
-    const range = calculateDateRange('30days');
+    // Fetch user data for the specified date range
+    const range = calculateDateRange(dateRange);
     const dailyData = await getDailyUsageData(range.startDate, range.endDate);
     
     // Filter to this user's data

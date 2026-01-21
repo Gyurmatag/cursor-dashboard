@@ -437,14 +437,14 @@ async function processUsageData(
         await db.run(sql`
           INSERT INTO daily_snapshots (
             id, user_email, date, is_active, lines_added, agent_requests, 
-            chat_requests, composer_requests, tab_accepts, total_accepts, 
-            total_applies, most_used_model
+            chat_requests, composer_requests, tab_accepts, total_tabs_shown, 
+            total_accepts, total_applies, most_used_model
           )
           VALUES (
             ${crypto.randomUUID()}, ${email}, ${date}, ${record.isActive ? 1 : 0}, 
             ${record.acceptedLinesAdded}, ${record.agentRequests}, ${record.chatRequests}, 
-            ${record.composerRequests}, ${record.totalTabsAccepted}, ${record.totalAccepts},
-            ${record.totalApplies}, ${record.mostUsedModel || ''}
+            ${record.composerRequests}, ${record.totalTabsAccepted}, ${record.totalTabsShown},
+            ${record.totalAccepts}, ${record.totalApplies}, ${record.mostUsedModel || ''}
           )
           ON CONFLICT(user_email, date) DO UPDATE SET
             is_active = ${record.isActive ? 1 : 0},
@@ -453,6 +453,7 @@ async function processUsageData(
             chat_requests = ${record.chatRequests},
             composer_requests = ${record.composerRequests},
             tab_accepts = ${record.totalTabsAccepted},
+            total_tabs_shown = ${record.totalTabsShown},
             total_accepts = ${record.totalAccepts},
             total_applies = ${record.totalApplies},
             most_used_model = ${record.mostUsedModel || ''}

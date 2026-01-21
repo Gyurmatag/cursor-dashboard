@@ -53,23 +53,23 @@ export async function fetchLeaderboardData(
         chatRequests: snap.chatRequests,
         composerRequests: snap.composerRequests,
         agentRequests: snap.agentRequests,
-        // Fields not in database (set to 0)
+        // Use actual database values instead of hardcoded zeros
         totalLinesAdded: snap.linesAdded,
-        totalLinesDeleted: 0,
-        acceptedLinesDeleted: 0,
-        totalApplies: 0,
-        totalAccepts: 0,
-        totalRejects: 0,
-        totalTabsShown: 0,
-        cmdkUsages: 0,
-        subscriptionIncludedReqs: 0,
-        apiKeyReqs: 0,
-        usageBasedReqs: 0,
-        bugbotUsages: 0,
-        mostUsedModel: '',
-        applyMostUsedExtension: '',
-        tabMostUsedExtension: '',
-        clientVersion: '',
+        totalLinesDeleted: 0, // Not stored in database
+        acceptedLinesDeleted: 0, // Not stored in database
+        totalApplies: snap.totalApplies,
+        totalAccepts: snap.totalAccepts,
+        totalRejects: 0, // Not stored in database
+        totalTabsShown: snap.totalTabsShown,
+        cmdkUsages: 0, // Not stored in database
+        subscriptionIncludedReqs: 0, // Not stored in database
+        apiKeyReqs: 0, // Not stored in database
+        usageBasedReqs: 0, // Not stored in database
+        bugbotUsages: 0, // Not stored in database
+        mostUsedModel: snap.mostUsedModel || '',
+        applyMostUsedExtension: '', // Not stored in database
+        tabMostUsedExtension: '', // Not stored in database
+        clientVersion: '', // Not stored in database
       }));
       
       return aggregateUserMetrics(usageData, members);
@@ -139,22 +139,23 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
                 chatRequests: snap.chatRequests,
                 composerRequests: snap.composerRequests,
                 agentRequests: snap.agentRequests,
+                // Use actual database values instead of hardcoded zeros
                 totalLinesAdded: snap.linesAdded,
-                totalLinesDeleted: 0,
-                acceptedLinesDeleted: 0,
-                totalApplies: 0,
-                totalAccepts: 0,
-                totalRejects: 0,
-                totalTabsShown: 0,
-                cmdkUsages: 0,
-                subscriptionIncludedReqs: 0,
-                apiKeyReqs: 0,
-                usageBasedReqs: 0,
-                bugbotUsages: 0,
-                mostUsedModel: '',
-                applyMostUsedExtension: '',
-                tabMostUsedExtension: '',
-                clientVersion: '',
+                totalLinesDeleted: 0, // Not stored in database
+                acceptedLinesDeleted: 0, // Not stored in database
+                totalApplies: snap.totalApplies,
+                totalAccepts: snap.totalAccepts,
+                totalRejects: 0, // Not stored in database
+                totalTabsShown: snap.totalTabsShown,
+                cmdkUsages: 0, // Not stored in database
+                subscriptionIncludedReqs: 0, // Not stored in database
+                apiKeyReqs: 0, // Not stored in database
+                usageBasedReqs: 0, // Not stored in database
+                bugbotUsages: 0, // Not stored in database
+                mostUsedModel: snap.mostUsedModel || '',
+                applyMostUsedExtension: '', // Not stored in database
+                tabMostUsedExtension: '', // Not stored in database
+                clientVersion: '', // Not stored in database
               }));
             })(),
         // Database: Get user achievements (calculated from ALL historical data)
@@ -231,6 +232,7 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
         chatRequests: record.chatRequests,
         composerRequests: record.composerRequests,
         tabAccepts: record.totalTabsAccepted,
+        totalTabsShown: record.totalTabsShown || 0,
         totalAccepts: record.totalAccepts || 0,
         totalApplies: record.totalApplies || 0,
         mostUsedModel: record.mostUsedModel || null,

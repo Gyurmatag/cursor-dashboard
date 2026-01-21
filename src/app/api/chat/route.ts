@@ -24,12 +24,18 @@ DO NOT use tools for:
 ❌ Commentary: "that's good", "interesting", "not bad"
 ❌ Text generation: "write a sentence", "tell me about", "explain"
 
+DATE RANGES AVAILABLE:
+All tools support these date ranges: 'today', 'yesterday', '7days', '14days', '30days', '60days', '90days', 'mtd', 'ytd', 'qtd', 'alltime'
+- When users ask for "all time", "overall", "total", or "historical" data - USE 'alltime' dateRange
+- Default to appropriate time ranges if not specified (7days for leaderboard, 30days for profiles)
+
 IMPORTANT: If a user mentions a person's name with words like "stats", "performance", "metrics", "activity", "doing" - USE getUserProfile tool.
 
 Examples:
 - "What is John's stats?" → Use getUserProfile
-- "How is Sarah doing today?" → Use getUserProfile
-- "Show róka stats" → Use getUserProfile
+- "How is Sarah doing today?" → Use getUserProfile with dateRange: 'today'
+- "Show róka all time stats" → Use getUserProfile with dateRange: 'alltime'
+- "Who are the top users overall?" → Use getLeaderboard with dateRange: 'alltime'
 - "hello" → Respond conversationally (no tool)
 - "that's great" → Respond conversationally (no tool)
 
