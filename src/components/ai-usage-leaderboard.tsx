@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { PrivacyBlur } from '@/components/privacy-blur';
 import {
   Table,
   TableBody,
@@ -242,8 +243,12 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                 </TableCell>
                 <TableCell>
                   <div className="flex flex-col">
-                    <span className="font-medium">{entry.name}</span>
-                    <span className="text-xs text-muted-foreground">{entry.email}</span>
+                    <span className="font-medium">
+                      <PrivacyBlur>{entry.name}</PrivacyBlur>
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      <PrivacyBlur>{entry.email}</PrivacyBlur>
+                    </span>
                   </div>
                 </TableCell>
                 <TableCell className="font-mono font-semibold">

@@ -1,4 +1,5 @@
 import React from 'react';
+import { PrivacyBlur } from '@/components/privacy-blur';
 import { Card } from '@/components/ui/card';
 import { UserIcon, TrendingUpIcon, CodeIcon, MessageSquareIcon, SparklesIcon, ZapIcon } from 'lucide-react';
 import type { UserProfileResult } from '@/types/chat';
@@ -19,8 +20,12 @@ export const UserProfileCard = React.memo(({ data }: UserProfileCardProps) => {
             <UserIcon className="w-8 h-8 text-primary" />
           </div>
           <div className="flex-1">
-            <h3 className="text-2xl font-bold mb-1">{user.name}</h3>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <h3 className="text-2xl font-bold mb-1">
+              <PrivacyBlur>{user.name}</PrivacyBlur>
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              <PrivacyBlur>{user.email}</PrivacyBlur>
+            </p>
           </div>
         </div>
       </div>

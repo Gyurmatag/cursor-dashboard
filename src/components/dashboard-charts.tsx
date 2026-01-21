@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { usePrivacy } from '@/components/privacy-provider';
 import {
   Bar,
   BarChart,
@@ -208,16 +209,18 @@ const TopPerformersChart = React.memo(function TopPerformersChart({
 }: {
   data: LeaderboardEntry[];
 }) {
+  const { isBlurred } = usePrivacy();
+  
   const chartData = useMemo(() => {
     // Get top 8 performers
     return data
       .slice(0, 8)
-      .map((entry) => ({
-        name: entry.name.split(' ')[0], // First name only for space
+      .map((entry, index) => ({
+        name: isBlurred ? `User ${index + 1}` : entry.name.split(' ')[0], // First name only for space, or anonymized
         score: entry.totalActivityScore,
         fill: '#f87171',
       }));
-  }, [data]);
+  }, [data, isBlurred]);
 
   return (
     <Card>

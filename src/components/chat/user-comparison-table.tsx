@@ -1,4 +1,5 @@
 import { memo, useState, useCallback, useMemo } from 'react';
+import { PrivacyBlur } from '@/components/privacy-blur';
 import { Card } from '@/components/ui/card';
 import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
 import type { UserComparisonTableProps } from '@/types/chat';
@@ -95,8 +96,12 @@ export const UserComparisonTable = memo(function UserComparisonTable({ users, me
                   <td key={col.key} className="px-4 py-3 text-sm">
                     {col.key === 'name' ? (
                       <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                        <p className="font-medium">
+                          <PrivacyBlur>{user.name}</PrivacyBlur>
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          <PrivacyBlur>{user.email}</PrivacyBlur>
+                        </p>
                       </div>
                     ) : (
                       <span className="font-mono">

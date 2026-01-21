@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { PrivacyBlur } from '@/components/privacy-blur';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatNumber } from '@/lib/utils';
 import { 
@@ -36,7 +37,7 @@ const cardClasses = "transition-all hover:shadow-lg";
 
 interface StatCardProps {
   title: string;
-  value: string | number;
+  value: React.ReactNode;
   description?: string;
   icon: keyof typeof statIcons;
   highlight?: boolean;
@@ -143,7 +144,7 @@ export const SummaryStats = React.memo(function SummaryStats({
       />
       <StatCard
         title="Top Performer"
-        value={stats.topUser.name}
+        value={<PrivacyBlur>{stats.topUser.name}</PrivacyBlur>}
         description={`Score: ${formatNumber(stats.topUser.totalActivityScore)}`}
         icon="topUser"
         highlight

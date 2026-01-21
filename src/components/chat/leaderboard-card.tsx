@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { PrivacyBlur } from '@/components/privacy-blur';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrophyIcon, TrendingUpIcon, CodeIcon, MessageSquareIcon, SparklesIcon } from 'lucide-react';
@@ -59,8 +60,12 @@ export const LeaderboardCard = memo(function LeaderboardCard({ data }: Leaderboa
 
               {/* User Info */}
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{entry.name}</p>
-                <p className="text-sm text-muted-foreground truncate">{entry.email}</p>
+                <p className="font-medium truncate">
+                  <PrivacyBlur>{entry.name}</PrivacyBlur>
+                </p>
+                <p className="text-sm text-muted-foreground truncate">
+                  <PrivacyBlur>{entry.email}</PrivacyBlur>
+                </p>
               </div>
 
               {/* Metrics */}

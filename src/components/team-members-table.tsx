@@ -1,3 +1,4 @@
+import { PrivacyBlur } from '@/components/privacy-blur';
 import {
   Table,
   TableBody,
@@ -38,8 +39,12 @@ export function TeamMembersTable({ members }: TeamMembersTableProps) {
         <TableBody>
           {members.map((member, index) => (
             <TableRow key={index}>
-              <TableCell className="font-medium">{member.name}</TableCell>
-              <TableCell>{member.email}</TableCell>
+              <TableCell className="font-medium">
+                <PrivacyBlur>{member.name}</PrivacyBlur>
+              </TableCell>
+              <TableCell>
+                <PrivacyBlur>{member.email}</PrivacyBlur>
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>

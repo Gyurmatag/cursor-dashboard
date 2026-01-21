@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { ThemeSwitcher } from '@/components/theme-switcher';
+import { PrivacyToggle } from '@/components/privacy-toggle';
 import { NavLinks } from '@/components/nav-links';
 import { MobileNav } from '@/components/mobile-nav';
 import { UserNav } from '@/components/user-nav';
@@ -33,8 +34,9 @@ export async function NavHeader() {
           <NavLinks variant="desktop" />
         </div>
         
-        {/* Right side - User nav and theme switcher */}
+        {/* Right side - Privacy toggle, user nav and theme switcher */}
         <div className="flex items-center gap-2 md:gap-4 ml-auto">
+          <PrivacyToggle />
           <Suspense fallback={<Skeleton className="h-8 w-32 rounded" />}>
             <UserNav user={user} />
           </Suspense>

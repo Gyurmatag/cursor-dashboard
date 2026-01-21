@@ -1,5 +1,6 @@
 'use client';
 
+import { PrivacyBlur } from '@/components/privacy-blur';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { UserIcon } from 'lucide-react';
@@ -34,8 +35,12 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
 
           {/* User Info */}
           <div className="flex-1 text-center sm:text-left space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">{user.name}</h1>
-            <p className="text-muted-foreground text-lg">{user.email}</p>
+            <h1 className="text-3xl font-bold tracking-tight">
+              <PrivacyBlur>{user.name}</PrivacyBlur>
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              <PrivacyBlur>{user.email}</PrivacyBlur>
+            </p>
             <div className="pt-2">
               <p className="text-sm text-muted-foreground">
                 Cursor Dashboard Member
