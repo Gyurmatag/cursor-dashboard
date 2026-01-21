@@ -18,19 +18,19 @@ type MetricKey = 'linesAdded' | 'chatRequests' | 'composerRequests' | 'agentRequ
 const chartConfig: ChartConfig = {
   linesAdded: {
     label: 'Lines Added',
-    color: 'hsl(var(--chart-1))',
+    color: 'hsl(200, 100%, 50%)', // Vibrant cyan blue
   },
   chatRequests: {
     label: 'Chat Requests',
-    color: 'hsl(var(--chart-2))',
+    color: 'hsl(280, 100%, 60%)', // Vibrant purple/magenta
   },
   composerRequests: {
     label: 'Composer Requests',
-    color: 'hsl(var(--chart-3))',
+    color: 'hsl(25, 100%, 55%)', // Vibrant orange/coral
   },
   agentRequests: {
     label: 'Agent Requests',
-    color: 'hsl(var(--chart-4))',
+    color: 'hsl(140, 85%, 45%)', // Vivid green
   },
 };
 
