@@ -52,8 +52,8 @@ Be helpful and conversational when not fetching data.`;
 export async function POST(req: Request) {
   try {
     const { env } = await getCloudflareContext();
-    
-    const apiKey = env.OPENAI_API_KEY as string;
+    // Fallback to process.env for local dev (e.g. .env.local) when .dev.vars is not used
+    const apiKey = (env.OPENAI_API_KEY ?? process.env.OPENAI_API_KEY) as string | undefined;
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: 'OpenAI API key not configured' }),
