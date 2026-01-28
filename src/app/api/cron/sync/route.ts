@@ -27,14 +27,15 @@ export async function GET(request: NextRequest) {
     const kv = env.SYNC_KV;
     const apiKey = env.CURSOR_ADMIN_API_KEY as string;
 
-    // Verify this is a legitimate cron request or has valid secret
-    const cronSecret = request.headers.get('x-cron-secret');
+    // Verify: CRON_SECRET (header or Bearer), or Cloudflare cron (cf-cron)
     const envCronSecret = env.CRON_SECRET as string | undefined;
-    
-    // If CRON_SECRET is set, require it for manual calls
-    // Cron triggers don't send this header, so allow requests without it
+    const headerSecret = request.headers.get('x-cron-secret');
+    const authHeader = request.headers.get('authorization');
+    const bearerSecret =
+      authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const cronSecret = headerSecret ?? bearerSecret;
+
     if (envCronSecret && cronSecret !== envCronSecret) {
-      // Check if this is from Cloudflare's cron trigger
       const cfCron = request.headers.get('cf-cron');
       if (!cfCron) {
         return NextResponse.json(

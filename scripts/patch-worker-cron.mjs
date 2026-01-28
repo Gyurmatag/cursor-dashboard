@@ -21,63 +21,73 @@ try {
   // Read the generated worker file
   let workerContent = readFileSync(workerPath, 'utf-8');
   
-  // Check if scheduled() already exists
-  if (workerContent.includes('export async function scheduled')) {
-    console.log('[Patch] scheduled() export already exists, skipping');
+  // Cloudflare expects scheduled() on the default export object (see .agents/skills/cloudflare/references/cron-triggers)
+  // Skip only if it's already the Cloudflare-aligned version (controller, ctx.waitUntil)
+  if (/\},\s*\n\s*async scheduled\(controller/.test(workerContent)) {
+    console.log('[Patch] scheduled(controller) already on default export, skipping');
     process.exit(0);
   }
-  
-  // Add the scheduled export at the end of the file
-  const scheduledExport = `
 
-/**
- * Scheduled event handler for cron triggers
- * Added by post-build patch script
- * Triggered by: "0 * * * *" (every hour)
- */
-export async function scheduled(event, env, ctx) {
-  console.log('[Cron Trigger] Scheduled event fired:', event.cron);
-  
-  try {
-    // Get the cron secret from environment
-    const cronSecret = env.CRON_SECRET;
-    
-    if (!cronSecret) {
-      console.error('[Cron Trigger] CRON_SECRET not configured');
-      return;
+  // Per Cloudflare Scheduled Handler API: first param is controller (ScheduledController), use ctx.waitUntil for async work
+  const scheduledMethod = `
+    async scheduled(controller, env, ctx) {
+        console.log('[Cron Trigger] Scheduled event fired:', controller.cron, new Date(controller.scheduledTime));
+        const cronSecret = env.CRON_SECRET;
+        if (!cronSecret) {
+            console.error('[Cron Trigger] CRON_SECRET not configured');
+            controller.noRetry();
+            return;
+        }
+        const domain = env.WORKER_DOMAIN || 'cursor-dashboard.cfi-ops.workers.dev';
+        const url = \`https://\${domain}/api/cron/sync\`;
+        console.log('[Cron Trigger] Calling sync endpoint:', url);
+        ctx.waitUntil(
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Authorization': \`Bearer \${cronSecret}\`,
+                    'X-Cron-Trigger': 'cloudflare',
+                },
+            })
+                .then(async (response) => {
+                    const result = await response.json();
+                    if (response.ok) {
+                        console.log('[Cron Trigger] Sync completed successfully:', result);
+                    } else {
+                        console.error('[Cron Trigger] Sync failed:', response.status, result);
+                    }
+                })
+                .catch((error) => {
+                    console.error('[Cron Trigger] Error during scheduled sync:', error);
+                })
+        );
     }
-    
-    // Determine the worker domain
-    const domain = env.WORKER_DOMAIN || 'cursor-dashboard.cfi-ops.workers.dev';
-    const url = \`https://\${domain}/api/cron/sync\`;
-    
-    console.log('[Cron Trigger] Calling sync endpoint:', url);
-    
-    // Call the sync endpoint with authorization
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': \`Bearer \${cronSecret}\`,
-        'X-Cron-Trigger': 'cloudflare',
-      },
-    });
-    
-    const result = await response.json();
-    
-    if (response.ok) {
-      console.log('[Cron Trigger] Sync completed successfully:', result);
-    } else {
-      console.error('[Cron Trigger] Sync failed:', response.status, result);
-    }
-  } catch (error) {
-    console.error('[Cron Trigger] Error during scheduled sync:', error);
-    // Don't throw - let the cron continue
-  }
-}
 `;
-  
-  // Append the scheduled export
-  workerContent += scheduledExport;
+
+  // Case 1: Already has old scheduled(event, ...) on default export → replace with Cloudflare-aligned version
+  const oldScheduledBlock = /    async scheduled\(event, env, ctx\)\s*\{[\s\S]*?\n    }\s*\n\s*};/;
+  if (oldScheduledBlock.test(workerContent)) {
+    workerContent = workerContent.replace(
+      oldScheduledBlock,
+      '\n    ' + scheduledMethod.trimStart() + '\n};'
+    );
+  } else {
+    // Case 2: Fresh build, only fetch → add scheduled at end of default export
+    const defaultExportEnd = /\s+\},\s*\n+\};/;
+    if (!defaultExportEnd.test(workerContent)) {
+      throw new Error('Could not find default export end (  },\\n};) in worker');
+    }
+    workerContent = workerContent.replace(
+      defaultExportEnd,
+      `\n    },${scheduledMethod}\n};`
+    );
+  }
+
+  // Remove any old named "export async function scheduled" block (from previous patch style)
+  workerContent = workerContent.replace(
+    /\n\n\/\*\*[\s\S]*?export async function scheduled\([^)]*\)[\s\S]*\n\}\s*\n?/,
+    '\n'
+  );
   
   // Write back to the file
   writeFileSync(workerPath, workerContent, 'utf-8');
