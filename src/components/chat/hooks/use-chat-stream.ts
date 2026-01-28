@@ -134,27 +134,23 @@ export function useChatStream({ onError }: UseChatStreamOptions = {}) {
               });
             }
 
-            // Handle finish event
-            if (event.type === 'finish') {
-              const hasText = aiMessage.parts.some(p => p.type === 'text' && p.text?.trim());
-              const hasTools = aiMessage.parts.some(p => p.type === 'tool-result');
-
-              if (!hasText && hasTools) {
-                aiMessage.parts.unshift({
-                  type: 'text',
-                  text: 'Here\'s the data you requested:'
-                });
-              } else if (!hasText && !hasTools) {
-                aiMessage.parts.push({
-                  type: 'text',
-                  text: 'I apologize, but I couldn\'t generate a response. Please try rephrasing your question or ask something else.'
-                });
-              }
-            }
+            // Finish event is handled after the read loop (fallback text when tools but no text)
           } catch (e) {
             console.error('[Stream parse]', e);
           }
         }
+      }
+
+      // Fallback when stream ends with tool results but no text (e.g. no 'finish' event or model didn't respond).
+      const hasText = aiMessage.parts.some(p => p.type === 'text' && (p as { text?: string }).text?.trim());
+      const hasTools = aiMessage.parts.some(p => p.type === 'tool-result');
+      if (!hasText && hasTools) {
+        aiMessage.parts.unshift({ type: 'text', text: "Here's the data you requested:" });
+      } else if (!hasText && !hasTools) {
+        aiMessage.parts.push({
+          type: 'text',
+          text: "I couldn't generate a response. Please try rephrasing your question or ask something else.",
+        });
       }
 
       // Final update to ensure message is saved

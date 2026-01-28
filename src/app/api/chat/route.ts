@@ -1,4 +1,4 @@
-import { streamText, convertToModelMessages, UIMessage } from 'ai';
+import { streamText, convertToModelMessages, UIMessage, stepCountIs } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { chatTools } from '@/lib/chat-tools';
@@ -107,6 +107,9 @@ export async function POST(req: Request) {
       system: SYSTEM_PROMPT,
       tools: chatTools,
       temperature: 0.7,
+      // Allow 2 steps: step 1 = tool call + execution, step 2 = model generates text after seeing tool result.
+      // Default stepCountIs(1) stops after the tool runs, so the model never gets to write the reply (blank answer).
+      stopWhen: stepCountIs(2),
     });
     
     return result.toUIMessageStreamResponse();
