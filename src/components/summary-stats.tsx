@@ -125,9 +125,9 @@ export const SummaryStats = React.memo(function SummaryStats({
         highlight
       />
       <StatCard
-        title="Accepted Lines"
+        title="Accepted Lines (All AI)"
         value={formatNumber(stats.totalLines)}
-        description="AI-generated code kept"
+        description="Lines accepted across Tab, Composer & Agent"
         icon="lines"
       />
       <StatCard

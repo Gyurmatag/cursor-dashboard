@@ -5,6 +5,7 @@ import { eq, and, gte, lte } from 'drizzle-orm';
 import { createDb } from '@/db';
 import * as schema from '@/db/schema';
 import { getTeamMembers, getDailyUsageData, aggregateUserMetrics } from './cursor-api';
+import { calculateStreakFromActiveDates } from './achievement-calculator';
 import type { LeaderboardEntry, DailyUsageRecord } from '@/types/cursor';
 import type { UserStats, UserAchievement, DailySnapshot } from '@/db/schema';
 
@@ -201,12 +202,15 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
       ? leaderboardData.findIndex(entry => entry.email === userEmail) + 1 
       : 0;
 
+    const activeDateStrings = Array.from(activeDays);
+    const { maxConsecutiveDays, currentStreak } = calculateStreakFromActiveDates(activeDateStrings);
+
     // Create real-time user stats object
     const realtimeUserStats: UserStats = {
       email: userEmail,
       totalActiveDays: activeDays.size,
-      maxConsecutiveDays: 0, // Would need more complex calculation
-      currentStreak: 0, // Would need more complex calculation
+      maxConsecutiveDays,
+      currentStreak,
       totalLinesAdded,
       totalAgentRequests,
       totalChatRequests,

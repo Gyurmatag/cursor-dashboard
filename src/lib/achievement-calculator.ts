@@ -111,32 +111,24 @@ export async function calculateUserStats(
 }
 
 /**
- * Calculate streak information from snapshots
+ * Calculate streak from a list of active date strings (YYYY-MM-DD).
+ * Exported for use in profile/fetch so /me page can show correct streaks
+ * without relying on user_stats table.
  */
-function calculateStreak(snapshots: DailySnapshot[]): {
+export function calculateStreakFromActiveDates(activeDateStrings: string[]): {
   maxConsecutiveDays: number;
   currentStreak: number;
 } {
-  if (snapshots.length === 0) {
+  if (activeDateStrings.length === 0) {
     return { maxConsecutiveDays: 0, currentStreak: 0 };
   }
 
-  // Filter to only active days and sort by date descending
-  const activeDates = snapshots
-    .filter((s) => s.isActive)
-    .map((s) => s.date)
-    .sort()
-    .reverse();
-
-  if (activeDates.length === 0) {
-    return { maxConsecutiveDays: 0, currentStreak: 0 };
-  }
+  const activeDates = [...new Set(activeDateStrings)].sort().reverse();
 
   let maxConsecutive = 1;
   let currentConsecutive = 1;
   let currentStreak = 0;
 
-  // Check if the most recent active day is today or yesterday
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
   const mostRecentActive = activeDates[0];
@@ -145,25 +137,20 @@ function calculateStreak(snapshots: DailySnapshot[]): {
     currentStreak = 1;
   }
 
-  // Calculate consecutive days
   for (let i = 1; i < activeDates.length; i++) {
-    const currentDate = new Date(activeDates[i - 1]);
-    const prevDate = new Date(activeDates[i]);
-    const diffDays = Math.floor(
+    const currentDate = new Date(activeDates[i - 1] + 'T12:00:00Z');
+    const prevDate = new Date(activeDates[i] + 'T12:00:00Z');
+    const diffDays = Math.round(
       (currentDate.getTime() - prevDate.getTime()) / 86400000
     );
 
     if (diffDays === 1) {
       currentConsecutive++;
-      if (i < activeDates.length && currentStreak > 0) {
-        currentStreak++;
-      }
+      if (currentStreak > 0) currentStreak++;
     } else {
       maxConsecutive = Math.max(maxConsecutive, currentConsecutive);
       currentConsecutive = 1;
-      if (currentStreak > 0) {
-        currentStreak = 0; // Streak broken
-      }
+      if (currentStreak > 0) currentStreak = 0;
     }
   }
 
@@ -175,20 +162,40 @@ function calculateStreak(snapshots: DailySnapshot[]): {
   };
 }
 
+/**
+ * Calculate streak information from snapshots
+ */
+function calculateStreak(snapshots: DailySnapshot[]): {
+  maxConsecutiveDays: number;
+  currentStreak: number;
+} {
+  const activeDates = snapshots
+    .filter((s) => s.isActive)
+    .map((s) => s.date);
+  return calculateStreakFromActiveDates(activeDates);
+}
+
 // ============================================================================
 // Team Stats Calculation
 // ============================================================================
 
 /**
- * Calculate team statistics from all user stats
+ * Calculate team statistics from daily snapshots (source of truth)
+ * 
+ * Previously this aggregated from user_stats, but that table can be stale
+ * when incremental syncs only update a subset of users. Computing directly
+ * from daily_snapshots ensures accuracy.
  */
 export async function calculateTeamStats(
   db: Database
 ): Promise<Partial<TeamStats>> {
-  // Get all user stats
+  // Get all user stats (still needed for streaks and member count)
   const allUserStats = await db.select().from(userStats);
 
-  if (allUserStats.length === 0) {
+  // Compute totals directly from daily_snapshots (source of truth)
+  const allSnapshots = await db.select().from(dailySnapshots);
+
+  if (allSnapshots.length === 0 && allUserStats.length === 0) {
     return {
       id: 'team',
       totalMembers: 0,
@@ -202,53 +209,36 @@ export async function calculateTeamStats(
     };
   }
 
-  // Aggregate totals
+  // Aggregate totals from daily_snapshots directly
   let totalTeamLines = 0;
   let totalTeamAgentRequests = 0;
   let totalTeamChatRequests = 0;
   let totalTeamComposerRequests = 0;
-  let totalTeamActiveDays = 0;
+  const activeUserDays = new Set<string>(); // "email|date" pairs
+
+  for (const snapshot of allSnapshots) {
+    totalTeamLines += snapshot.linesAdded;
+    totalTeamAgentRequests += snapshot.agentRequests;
+    totalTeamChatRequests += snapshot.chatRequests;
+    totalTeamComposerRequests += snapshot.composerRequests;
+
+    if (snapshot.isActive) {
+      activeUserDays.add(`${snapshot.userEmail}|${snapshot.date}`);
+    }
+  }
+
+  // Count members with active streaks from user_stats (streak logic is complex)
   let membersWithStreaks = 0;
-
   for (const user of allUserStats) {
-    totalTeamLines += user.totalLinesAdded;
-    totalTeamAgentRequests += user.totalAgentRequests;
-    totalTeamChatRequests += user.totalChatRequests;
-    totalTeamComposerRequests += user.totalComposerRequests;
-    totalTeamActiveDays += user.totalActiveDays;
-
     if (user.currentStreak >= 7) {
       membersWithStreaks++;
     }
   }
 
-  // Calculate best team day
-  const { bestTeamDayLines, bestTeamDayDate } = await calculateBestTeamDay(db);
+  // Unique members from snapshots
+  const uniqueMembers = new Set(allSnapshots.map(s => s.userEmail));
 
-  return {
-    id: 'team',
-    totalMembers: allUserStats.length,
-    totalTeamLines,
-    totalTeamAgentRequests,
-    totalTeamChatRequests,
-    totalTeamComposerRequests,
-    totalTeamActiveDays,
-    membersWithStreaks,
-    bestTeamDayLines,
-    bestTeamDayDate,
-    updatedAt: new Date(),
-  };
-}
-
-/**
- * Calculate the best team day (most lines generated)
- */
-async function calculateBestTeamDay(
-  db: Database
-): Promise<{ bestTeamDayLines: number; bestTeamDayDate: string | null }> {
-  // Get all snapshots grouped by date
-  const allSnapshots = await db.select().from(dailySnapshots);
-
+  // Calculate best team day from the same snapshot data
   const linesByDate = new Map<string, number>();
   for (const snapshot of allSnapshots) {
     const current = linesByDate.get(snapshot.date) || 0;
@@ -257,7 +247,6 @@ async function calculateBestTeamDay(
 
   let bestTeamDayLines = 0;
   let bestTeamDayDate: string | null = null;
-
   for (const [date, lines] of linesByDate) {
     if (lines > bestTeamDayLines) {
       bestTeamDayLines = lines;
@@ -265,7 +254,19 @@ async function calculateBestTeamDay(
     }
   }
 
-  return { bestTeamDayLines, bestTeamDayDate };
+  return {
+    id: 'team',
+    totalMembers: Math.max(uniqueMembers.size, allUserStats.length),
+    totalTeamLines,
+    totalTeamAgentRequests,
+    totalTeamChatRequests,
+    totalTeamComposerRequests,
+    totalTeamActiveDays: activeUserDays.size,
+    membersWithStreaks,
+    bestTeamDayLines,
+    bestTeamDayDate,
+    updatedAt: new Date(),
+  };
 }
 
 // ============================================================================

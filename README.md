@@ -81,7 +81,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 BETTER_AUTH_SECRET=your_random_secret_for_dev
 BETTER_AUTH_URL=http://localhost:3000
 CRON_SECRET=your_random_cron_secret
-CURSOR_API_KEY=your_cursor_api_key
+CURSOR_ADMIN_API_KEY=your_cursor_api_key
 ```
 
 4. Set up the database:
@@ -167,7 +167,7 @@ wrangler secret put BETTER_AUTH_URL
 wrangler secret put CRON_SECRET
 
 # Cursor API Key for data sync
-wrangler secret put CURSOR_API_KEY
+wrangler secret put CURSOR_ADMIN_API_KEY
 ```
 
 3. Create D1 database:

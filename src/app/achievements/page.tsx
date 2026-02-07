@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
-import { createDb, userAchievements, teamAchievements, userStats, teamStats, syncMetadata } from '@/db';
+import { createDb, userAchievements, teamAchievements, userStats, teamStats, dailySnapshots, syncMetadata } from '@/db';
 import { AchievementGrid } from '@/components/achievement-grid';
 import { AchievementSectionBadge } from '@/components/achievement-section-badge';
 import { NotInPlanBanner } from '@/components/not-in-plan-banner';
@@ -12,9 +12,10 @@ import { ArrowLeftIcon, TrophyIcon, UserIcon } from 'lucide-react';
 import { getSession } from '@/lib/auth-server';
 import { INDIVIDUAL_ACHIEVEMENTS } from '@/lib/achievements';
 import { getSyncMetadata } from '@/lib/sync-metadata-kv';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { AchievementsTabs } from './achievements-tabs';
 import { LastSyncInfo } from '@/components/last-sync-info';
+import type { TeamStats } from '@/db/schema';
 
 // Force dynamic rendering since we need to access D1 database
 export const dynamic = 'force-dynamic';
@@ -66,19 +67,44 @@ async function TeamAchievementsContent() {
   const { env } = await getCloudflareContext();
   const db = createDb(env.DB);
 
-  // Fetch only team data (parallel-fetching best practice)
-  const [teamAchievementsData, teamStatsData] = await Promise.all([
+  // Compute live team stats from daily_snapshots (source of truth)
+  // instead of relying on the pre-computed team_stats table which can drift
+  const [teamAchievementsData, cachedTeamStats, liveAggregates] = await Promise.all([
     db.select().from(teamAchievements),
     db.select().from(teamStats),
+    db.select({
+      totalTeamLines: sql<number>`COALESCE(SUM(${dailySnapshots.linesAdded}), 0)`,
+      totalTeamAgentRequests: sql<number>`COALESCE(SUM(${dailySnapshots.agentRequests}), 0)`,
+      totalTeamChatRequests: sql<number>`COALESCE(SUM(${dailySnapshots.chatRequests}), 0)`,
+      totalTeamComposerRequests: sql<number>`COALESCE(SUM(${dailySnapshots.composerRequests}), 0)`,
+      totalMembers: sql<number>`COUNT(DISTINCT ${dailySnapshots.userEmail})`,
+    }).from(dailySnapshots),
   ]);
 
-  const firstTeamStats = teamStatsData.length > 0 ? teamStatsData[0] : null;
+  const cached = cachedTeamStats.length > 0 ? cachedTeamStats[0] : null;
+  const live = liveAggregates[0];
+
+  // Merge live-computed totals with cached stats for fields that are
+  // harder to compute live (bestTeamDayLines, membersWithStreaks, etc.)
+  const liveTeamStats: TeamStats = {
+    id: 'team',
+    totalMembers: live?.totalMembers ?? cached?.totalMembers ?? 0,
+    totalTeamLines: live?.totalTeamLines ?? cached?.totalTeamLines ?? 0,
+    totalTeamAgentRequests: live?.totalTeamAgentRequests ?? cached?.totalTeamAgentRequests ?? 0,
+    totalTeamChatRequests: live?.totalTeamChatRequests ?? cached?.totalTeamChatRequests ?? 0,
+    totalTeamComposerRequests: live?.totalTeamComposerRequests ?? cached?.totalTeamComposerRequests ?? 0,
+    totalTeamActiveDays: cached?.totalTeamActiveDays ?? 0,
+    membersWithStreaks: cached?.membersWithStreaks ?? 0,
+    bestTeamDayLines: cached?.bestTeamDayLines ?? 0,
+    bestTeamDayDate: cached?.bestTeamDayDate ?? null,
+    updatedAt: new Date(),
+  };
 
   return (
     <AchievementGrid
       type="team"
       teamAchievements={teamAchievementsData}
-      teamStats={firstTeamStats}
+      teamStats={liveTeamStats}
     />
   );
 }
