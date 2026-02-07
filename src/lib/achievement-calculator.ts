@@ -131,9 +131,15 @@ export function calculateStreakFromActiveDates(activeDateStrings: string[]): {
 
   const today = new Date().toISOString().split('T')[0];
   const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const twoDaysAgo = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];
   const mostRecentActive = activeDates[0];
 
-  if (mostRecentActive === today || mostRecentActive === yesterday) {
+  // Streak is "current" if most recent active day is within last 3 days (handles timezone/sync)
+  if (
+    mostRecentActive === today ||
+    mostRecentActive === yesterday ||
+    mostRecentActive === twoDaysAgo
+  ) {
     currentStreak = 1;
   }
 

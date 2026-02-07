@@ -185,7 +185,14 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
       totalAccepts += record.totalAccepts;
       totalApplies += record.totalApplies;
       
-      if (record.isActive) {
+      // Count day as active for streaks if API says isActive OR there was any usage
+      const hasActivity =
+        record.isActive ||
+        record.acceptedLinesAdded > 0 ||
+        record.chatRequests > 0 ||
+        record.composerRequests > 0 ||
+        record.agentRequests > 0;
+      if (hasActivity) {
         activeDays.add(new Date(record.date).toISOString().split('T')[0]);
       }
     }

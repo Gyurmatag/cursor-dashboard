@@ -103,8 +103,23 @@ export async function runIncrementalSync(
       : Date.now() - 7 * 24 * 60 * 60 * 1000; // Default to 7 days ago
     const endDate = Date.now();
 
-    // Fetch data from Cursor API directly
-    const usageData = await fetchDailyUsageDataDirect(apiKey, startDate, endDate);
+    // Cursor API allows max 30 days per request; chunk when catching up after a long gap
+    const MAX_RANGE_MS = 30 * 24 * 60 * 60 * 1000;
+    const usageData: DailyUsageRecord[] = [];
+    if (endDate - startDate <= MAX_RANGE_MS) {
+      usageData.push(...(await fetchDailyUsageDataDirect(apiKey, startDate, endDate)));
+    } else {
+      let chunkEnd = endDate;
+      while (chunkEnd > startDate) {
+        const chunkStart = Math.max(chunkEnd - MAX_RANGE_MS, startDate);
+        const chunk = await fetchDailyUsageDataDirect(apiKey, chunkStart, chunkEnd);
+        usageData.push(...chunk);
+        chunkEnd = chunkStart - 1;
+        if (chunkEnd > startDate) {
+          await new Promise((r) => setTimeout(r, 2000)); // rate limit between chunks
+        }
+      }
+    }
 
     if (usageData.length === 0) {
       // Update both KV and D1 for transition period
