@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   TrendingUpIcon, 
-  FlameIcon, 
+  CalendarIcon, 
   CodeIcon, 
   MessageSquareIcon,
   WandIcon,
@@ -42,10 +42,10 @@ export function ProfileStatsSummary({
       color: 'text-blue-500',
     },
     {
-      title: 'Current Streak',
-      value: userStats?.currentStreak || 0,
-      description: `Max: ${userStats?.maxConsecutiveDays || 0} days`,
-      icon: FlameIcon,
+      title: 'Active Days',
+      value: userStats?.totalActiveDays.toLocaleString() ?? '0',
+      description: 'Days with activity (all time)',
+      icon: CalendarIcon,
       color: 'text-orange-500',
     },
     {

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { getSession } from '@/lib/auth-server';
-import { fetchUserProfile } from '@/lib/actions';
+import { fetchUserProfile, getProfileTeamData } from '@/lib/actions';
 import { ProfileHeader } from '@/components/profile-header';
 import { ProfileStatsSummary } from '@/components/profile-stats-summary';
 import { ProfileActivityChart } from '@/components/profile-activity-chart';
@@ -36,6 +36,8 @@ export default async function ProfilePage() {
     );
   }
 
+  const teamData = await getProfileTeamData(session.user.id);
+
   return (
     <div className="container mx-auto py-8 px-4 space-y-6">
       {/* Breadcrumb / Back Navigation */}
@@ -49,7 +51,11 @@ export default async function ProfilePage() {
       </div>
 
       {/* Profile Header - Always visible */}
-      <ProfileHeader user={session.user} />
+      <ProfileHeader
+        user={session.user}
+        userId={session.user.id}
+        teamData={teamData}
+      />
 
       {/* Profile Content - Streams in */}
       <Suspense fallback={<ProfileSkeleton />}>

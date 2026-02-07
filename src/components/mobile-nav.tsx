@@ -12,11 +12,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { NavLinks } from '@/components/nav-links';
 
+interface MobileNavProps {
+  showAdmin?: boolean;
+}
+
 /**
  * Mobile navigation component with hamburger menu
  * Uses Sheet component for slide-out drawer
  */
-export function MobileNav() {
+export function MobileNav({ showAdmin = false }: MobileNavProps) {
   const [open, setOpen] = useState(false);
 
   // Memoize close handler to prevent unnecessary re-renders in NavLinks
@@ -41,7 +45,7 @@ export function MobileNav() {
           <SheetTitle className="text-xl font-bold">Navigation</SheetTitle>
         </SheetHeader>
         <div className="mt-6">
-          <NavLinks variant="mobile" onNavigate={handleNavigate} />
+          <NavLinks variant="mobile" onNavigate={handleNavigate} showAdmin={showAdmin} />
         </div>
       </SheetContent>
     </Sheet>

@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboardIcon, TableIcon, TrophyIcon, ActivityIcon } from 'lucide-react';
+import { LayoutDashboardIcon, TableIcon, TrophyIcon, ActivityIcon, ShieldCheckIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 // Hoist static navigation items outside component
@@ -15,9 +15,12 @@ const navItems = [
   { href: '/chat', label: 'Pulse', icon: ActivityIcon },
 ] as const;
 
+const adminNavItem = { href: '/admin', label: 'Admin', icon: ShieldCheckIcon } as const;
+
 interface NavLinksProps {
   variant?: 'desktop' | 'mobile';
   onNavigate?: () => void;
+  showAdmin?: boolean;
 }
 
 /**
@@ -26,16 +29,21 @@ interface NavLinksProps {
  * Supports both desktop and mobile variants
  * Memoized to prevent unnecessary re-renders
  */
-export const NavLinks = React.memo(function NavLinks({ variant = 'desktop', onNavigate }: NavLinksProps) {
+function getItems(showAdmin: boolean) {
+  return showAdmin ? [...navItems, adminNavItem] : navItems;
+}
+
+export const NavLinks = React.memo(function NavLinks({ variant = 'desktop', onNavigate, showAdmin = false }: NavLinksProps) {
   const pathname = usePathname();
+  const items = getItems(showAdmin);
 
   if (variant === 'mobile') {
     return (
       <nav className="flex flex-col space-y-2">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
-          
+
           return (
             <Button
               key={item.href}
@@ -60,10 +68,10 @@ export const NavLinks = React.memo(function NavLinks({ variant = 'desktop', onNa
 
   return (
     <nav className="flex items-center space-x-8 text-sm font-medium">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const isActive = pathname === item.href;
         const Icon = item.icon;
-        
+
         return (
           <Link
             key={item.href}

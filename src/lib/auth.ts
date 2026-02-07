@@ -6,6 +6,8 @@ import * as authSchema from '@/db/auth-schema';
 
 // Allowed email domain for authentication
 const ALLOWED_DOMAIN = 'shiwaforce.com';
+// Must match ADMIN_EMAIL in @/lib/admin (used only in user.create hook to set role)
+const ADMIN_EMAIL = 'gyorgy.varga@shiwaforce.com';
 
 /**
  * Creates a Better Auth instance with the D1 database
@@ -42,13 +44,15 @@ export async function createAuth() {
             if (!email) {
               throw new Error('Email is required');
             }
-            
+
             const domain = email.split('@')[1];
             if (domain !== ALLOWED_DOMAIN) {
               throw new Error(`Only @${ALLOWED_DOMAIN} email addresses are allowed to sign in`);
             }
-            
-            return { data: user };
+
+            const role = email === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user';
+            // Do not set teamId from user_team_override on first sign-in; leave team unchanged (user chooses on profile or admin assigns later).
+            return { data: { ...user, role } };
           },
         },
       },

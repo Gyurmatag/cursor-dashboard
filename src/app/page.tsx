@@ -1,9 +1,12 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
+import { getSession } from '@/lib/auth-server';
+import { getProfileTeamData } from '@/lib/actions';
 import { SummaryStats } from '@/components/summary-stats';
 import { DashboardCharts } from '@/components/dashboard-charts';
 import { SummaryStatsSkeleton } from '@/components/summary-stats-skeleton';
 import { DashboardChartsSkeleton } from '@/components/dashboard-charts-skeleton';
+import { NoTeamAlert } from '@/components/no-team-alert';
 import { Button } from '@/components/ui/button';
 import { fetchLeaderboardData } from '@/lib/actions';
 import { ArrowRightIcon, MessageSquareIcon } from 'lucide-react';
@@ -32,6 +35,14 @@ async function DashboardChartsAsync() {
   return <DashboardCharts data={data} />;
 }
 
+async function NoTeamAlertSection() {
+  const session = await getSession();
+  if (!session?.user?.id) return null;
+  const teamData = await getProfileTeamData(session.user.id);
+  if (teamData.currentTeamId != null) return null;
+  return <NoTeamAlert />;
+}
+
 export default function DashboardPage() {
   return (
     <div className="container mx-auto py-6 sm:py-8 px-4 space-y-6 sm:space-y-8">
@@ -48,6 +59,11 @@ export default function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {/* No-team alert - only when logged in and no team */}
+      <Suspense fallback={null}>
+        <NoTeamAlertSection />
+      </Suspense>
 
       {/* Summary Stats Section - streams in independently */}
       <section className="space-y-4">

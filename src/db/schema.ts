@@ -4,6 +4,22 @@ import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-or
 export * from './auth-schema';
 
 // ============================================================================
+// Teams Table (user-selectable teams; default: Labor team, AI team)
+// ============================================================================
+export const teams = sqliteTable('teams', {
+  id: text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  name: text('name').notNull().unique(),
+});
+
+// ============================================================================
+// User team override (admin-assigned team for users not yet in auth user table)
+// ============================================================================
+export const userTeamOverride = sqliteTable('user_team_override', {
+  email: text('email').primaryKey(),
+  teamId: text('team_id').notNull(),
+});
+
+// ============================================================================
 // User Statistics Table
 // ============================================================================
 export const userStats = sqliteTable('user_stats', {
@@ -111,6 +127,12 @@ export const syncMetadata = sqliteTable('sync_metadata', {
 // ============================================================================
 // Type Exports
 // ============================================================================
+export type Team = typeof teams.$inferSelect;
+export type NewTeam = typeof teams.$inferInsert;
+
+export type UserTeamOverride = typeof userTeamOverride.$inferSelect;
+export type NewUserTeamOverride = typeof userTeamOverride.$inferInsert;
+
 export type UserStats = typeof userStats.$inferSelect;
 export type NewUserStats = typeof userStats.$inferInsert;
 

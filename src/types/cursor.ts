@@ -60,6 +60,8 @@ export interface LeaderboardEntry {
   acceptanceRate: number;
   activeDaysCount: number;
   mostUsedModel: string;
+  teamId?: string;
+  teamName?: string;
 }
 
 // Date Range Types

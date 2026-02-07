@@ -5,6 +5,7 @@ import { NavLinks } from '@/components/nav-links';
 import { MobileNav } from '@/components/mobile-nav';
 import { UserNav } from '@/components/user-nav';
 import { getSession } from '@/lib/auth-server';
+import { ADMIN_EMAIL } from '@/lib/admin';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -21,17 +22,19 @@ export async function NavHeader() {
     image: session.user.image ?? null,
   } : null;
 
+  const showAdmin = session?.user?.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Mobile hamburger menu - visible on mobile only */}
         <div className="flex items-center gap-3 md:hidden">
-          <MobileNav />
+          <MobileNav showAdmin={showAdmin} />
         </div>
         
         {/* Desktop Navigation - hidden on mobile */}
         <div className="hidden md:flex">
-          <NavLinks variant="desktop" />
+          <NavLinks variant="desktop" showAdmin={showAdmin} />
         </div>
         
         {/* Right side - Privacy toggle, user nav and theme switcher */}

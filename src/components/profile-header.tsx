@@ -3,7 +3,9 @@
 import { PrivacyBlur } from '@/components/privacy-blur';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
+import { ProfileTeamSelector } from '@/components/profile-team-selector';
 import { UserIcon } from 'lucide-react';
+import type { ProfileTeamData } from '@/lib/actions';
 
 interface ProfileHeaderProps {
   user: {
@@ -11,13 +13,15 @@ interface ProfileHeaderProps {
     email: string;
     image?: string | null;
   };
+  userId?: string;
+  teamData?: ProfileTeamData | null;
 }
 
 /**
  * Profile page header component
- * Displays user avatar, name, and email in a prominent card
+ * Displays user avatar, name, email, and team selector in a prominent card
  */
-export function ProfileHeader({ user }: ProfileHeaderProps) {
+export function ProfileHeader({ user, userId, teamData }: ProfileHeaderProps) {
   return (
     <Card className="bg-gradient-to-br from-primary/5 via-background to-background border-primary/10">
       <div className="p-6 sm:p-8">
@@ -46,6 +50,16 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
                 Cursor Dashboard Member
               </p>
             </div>
+            {userId && teamData && (
+              <div className="pt-3">
+                <ProfileTeamSelector
+                  userId={userId}
+                  currentTeamId={teamData.currentTeamId}
+                  currentTeamName={teamData.currentTeamName}
+                  teams={teamData.teams}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

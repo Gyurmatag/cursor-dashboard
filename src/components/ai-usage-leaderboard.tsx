@@ -150,6 +150,12 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
               >
                 User <SortIcon columnKey="name" sortKey={sortKey} sortDirection={sortDirection} />
               </TableHead>
+              <TableHead
+                className="hidden sm:table-cell cursor-pointer hover:bg-muted/50 transition-colors min-w-[100px]"
+                onClick={() => handleSort('teamName')}
+              >
+                Team <SortIcon columnKey="teamName" sortKey={sortKey} sortDirection={sortDirection} />
+              </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => handleSort('totalActivityScore')}
@@ -250,6 +256,9 @@ export function AiUsageLeaderboard({ entries }: AiUsageLeaderboardProps) {
                       <PrivacyBlur>{entry.email}</PrivacyBlur>
                     </span>
                   </div>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell text-muted-foreground">
+                  {entry.teamName ?? '—'}
                 </TableCell>
                 <TableCell className="font-mono font-semibold">
                   {formatNumber(entry.totalActivityScore)}
