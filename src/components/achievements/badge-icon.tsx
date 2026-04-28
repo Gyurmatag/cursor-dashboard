@@ -24,12 +24,12 @@ import {
   Users,
   Building,
   Castle,
-  Pyramid,
   UsersRound,
   MessageSquare,
   Music4,
   TrendingUp,
   CheckCircle2,
+  Pyramid,
   Lock,
   type LucideIcon,
 } from 'lucide-react';
@@ -61,12 +61,12 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Users,
   Building,
   Castle,
-  Pyramid,
   UsersRound,
   MessageSquare,
   Music4,
   TrendingUp,
   CheckCircle2,
+  Pyramid,
 };
 
 interface BadgeIconProps {
