@@ -374,7 +374,7 @@ export const INDIVIDUAL_ACHIEVEMENTS: Achievement[] = [
 ];
 
 // ============================================================================
-// Team Achievements (10)
+// Team Achievements (11)
 // ============================================================================
 
 export const TEAM_ACHIEVEMENTS: Achievement[] = [
@@ -417,6 +417,19 @@ export const TEAM_ACHIEVEMENTS: Achievement[] = [
     shape: 'star',
     checkFn: (stats) => (stats as TeamStats).totalTeamLines >= 1000000,
     progressFn: (stats) => Math.min((stats as TeamStats).totalTeamLines / 1000000 * 100, 100),
+  },
+  {
+    id: 'team-decamillion',
+    name: 'Decamillion',
+    description: 'Team generates 10,000,000 lines together',
+    icon: 'Pyramid',
+    category: 'milestones',
+    type: 'team',
+    tier: 'legendary',
+    threshold: 10000000,
+    shape: 'star',
+    checkFn: (stats) => (stats as TeamStats).totalTeamLines >= 10000000,
+    progressFn: (stats) => Math.min((stats as TeamStats).totalTeamLines / 10000000 * 100, 100),
   },
 
   // Collaboration
