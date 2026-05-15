@@ -9,10 +9,9 @@ import type {
   AICommitMetricsResponse,
   AICodeChange,
   AICodeChangesResponse,
-  AuditLogsResponse,
-  AuditLogEvent,
   InactiveCoworkerRow,
   InactiveCoworkersSummary,
+  LowUsageCoworkerRow,
 } from '@/types/cursor';
 
 // Re-export types for convenience
@@ -27,6 +26,7 @@ export type {
   AICodeChangesResponse,
   InactiveCoworkerRow,
   InactiveCoworkersSummary,
+  LowUsageCoworkerRow,
 } from '@/types/cursor';
 
 /**
@@ -476,13 +476,54 @@ function isUnpaidAdminTeamRole(role: string | undefined): boolean {
   return r === 'free-owner' || r === 'unpaid-admin';
 }
 
+type UsageAggFull = {
+  activeDays: Set<string>;
+  lastActiveDay: string | null;
+  hadRows: boolean;
+  acceptedLinesAdded: number;
+  chatRequests: number;
+  composerRequests: number;
+  agentRequests: number;
+  totalTabsAccepted: number;
+};
+
+function emptyUsageAgg(): UsageAggFull {
+  return {
+    activeDays: new Set(),
+    lastActiveDay: null,
+    hadRows: false,
+    acceptedLinesAdded: 0,
+    chatRequests: 0,
+    composerRequests: 0,
+    agentRequests: 0,
+    totalTabsAccepted: 0,
+  };
+}
+
+function addDailyRowMetrics(agg: UsageAggFull, row: DailyUsageRecord): void {
+  agg.acceptedLinesAdded += Number(row.acceptedLinesAdded) || 0;
+  agg.chatRequests += Number(row.chatRequests) || 0;
+  agg.composerRequests += Number(row.composerRequests) || 0;
+  agg.agentRequests += Number(row.agentRequests) || 0;
+  agg.totalTabsAccepted += Number(row.totalTabsAccepted) || 0;
+}
+
+/** Match `aggregateUserMetrics` leaderboard weights, summed over the period */
+function activityScoreFromTotals(agg: UsageAggFull): number {
+  return (
+    agg.acceptedLinesAdded * 2 +
+    agg.totalTabsAccepted * 1 +
+    agg.chatRequests * 3 +
+    agg.composerRequests * 3 +
+    agg.agentRequests * 3
+  );
+}
+
 const MS_DAY = 86400000;
 const INACTIVE_USAGE_PAGE_SIZE = 1000;
-const AUDIT_PAGE_SIZE = 500;
-/** Cursor Admin API rejects ranges over 30 days */
-const AUDIT_CHUNK_DAYS = 29;
 const DEFAULT_INACTIVITY_PERIOD_DAYS = 30;
-const DEFAULT_LOGIN_LOOKBACK_DAYS = 90;
+/** Inclusive: 1..N active days in the period counts as “low usage” for seat review */
+const DEFAULT_LOW_USAGE_MAX_ACTIVE_DAYS = 5;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -542,106 +583,23 @@ async function fetchAllDailyUsageForAllMembers(
   return all;
 }
 
-async function fetchAuditLogPage(
-  apiKey: string,
-  startMs: number,
-  endMs: number,
-  page: number
-): Promise<AuditLogsResponse> {
-  const params = new URLSearchParams({
-    startTime: String(startMs),
-    endTime: String(endMs),
-    eventTypes: 'login',
-    page: String(page),
-    pageSize: String(AUDIT_PAGE_SIZE),
-  });
-
-  const response = await fetch(`https://api.cursor.com/teams/audit-logs?${params}`, {
-    headers: {
-      'Authorization': `Basic ${btoa(`${apiKey}:`)}`,
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`Audit logs request failed: ${response.status} ${text}`);
-  }
-
-  return response.json() as Promise<AuditLogsResponse>;
-}
-
-async function fetchAllAuditLoginsInWindow(
-  apiKey: string,
-  startMs: number,
-  endMs: number
-): Promise<AuditLogEvent[]> {
-  const events: AuditLogEvent[] = [];
-  let page = 1;
-
-  for (;;) {
-    const payload = await fetchAuditLogPage(apiKey, startMs, endMs, page);
-    events.push(...(payload.events ?? []));
-    if (!payload.pagination?.hasNextPage) break;
-    page++;
-    await delay(150);
-  }
-
-  return events;
-}
-
 /**
- * Latest login timestamp (ISO string) per lowercased email over {@param lookbackDays}.
- */
-async function buildLastLoginMap(lookbackDays: number): Promise<Map<string, string>> {
-  const apiKey = await getApiKey();
-  const map = new Map<string, string>();
-  let windowEnd = Date.now();
-  let remaining = lookbackDays;
-
-  while (remaining > 0) {
-    const chunkDays = Math.min(AUDIT_CHUNK_DAYS, remaining);
-    const windowStart = windowEnd - chunkDays * MS_DAY;
-    const events = await fetchAllAuditLoginsInWindow(apiKey, windowStart, windowEnd);
-    for (const e of events) {
-      if (e.event_type !== 'login') continue;
-      const em = e.user_email?.toLowerCase();
-      if (!em) continue;
-      const prev = map.get(em);
-      if (!prev || e.timestamp > prev) {
-        map.set(em, e.timestamp);
-      }
-    }
-    windowEnd = windowStart;
-    remaining -= chunkDays;
-    if (remaining > 0) {
-      await delay(250);
-    }
-  }
-
-  return map;
-}
-
-/**
- * Team members with no Cursor usage activity in the lookback window,
- * plus latest login from audit logs (separate lookback).
+ * Team members with no / low Cursor usage activity in the lookback window (daily usage only).
  */
 export const getInactiveCoworkersSummary = cache(async (): Promise<InactiveCoworkersSummary> => {
   const periodDays = DEFAULT_INACTIVITY_PERIOD_DAYS;
   const periodEndMs = Date.now();
   const periodStartMs = periodEndMs - periodDays * MS_DAY;
-  const loginLookbackDays = DEFAULT_LOGIN_LOOKBACK_DAYS;
 
   const members = await getTeamMembers();
   const usageRows = await fetchAllDailyUsageForAllMembers(periodStartMs, periodEndMs);
-  const lastLoginByEmail = await buildLastLoginMap(loginLookbackDays);
 
   const activeMembers = members.filter(
     (m) => !m.isRemoved && !isUnpaidAdminTeamRole(m.role)
   );
 
-  type UsageAgg = { activeDays: Set<string>; lastActiveDay: string | null; hadRows: boolean };
-  const usageByEmail = new Map<string, UsageAgg>();
+  const lowUsageMaxActiveDays = DEFAULT_LOW_USAGE_MAX_ACTIVE_DAYS;
+  const usageByEmail = new Map<string, UsageAggFull>();
 
   for (const row of usageRows) {
     const email = row.email?.toLowerCase();
@@ -649,11 +607,12 @@ export const getInactiveCoworkersSummary = cache(async (): Promise<InactiveCowor
 
     let agg = usageByEmail.get(email);
     if (!agg) {
-      agg = { activeDays: new Set(), lastActiveDay: null, hadRows: false };
+      agg = emptyUsageAgg();
       usageByEmail.set(email, agg);
     }
 
     agg.hadRows = true;
+    addDailyRowMetrics(agg, row);
     const dayKey =
       row.day ?? new Date(row.date).toISOString().slice(0, 10);
 
@@ -666,31 +625,58 @@ export const getInactiveCoworkersSummary = cache(async (): Promise<InactiveCowor
   }
 
   const inactive: InactiveCoworkerRow[] = [];
+  const lowUsage: LowUsageCoworkerRow[] = [];
 
   for (const m of activeMembers) {
     const key = m.email.toLowerCase();
     const agg = usageByEmail.get(key);
     const activeDaysInPeriod = agg?.activeDays.size ?? 0;
-    if (activeDaysInPeriod > 0) continue;
+    const displayName = m.name || m.email.split('@')[0] || m.email;
 
-    inactive.push({
-      email: m.email,
-      name: m.name || m.email.split('@')[0] || m.email,
-      activeDaysInPeriod,
-      lastActiveDay: agg?.lastActiveDay ?? null,
-      lastLoginAt: lastLoginByEmail.get(key) ?? null,
-      hadUsageRowsInPeriod: agg?.hadRows ?? false,
-    });
+    if (activeDaysInPeriod === 0) {
+      inactive.push({
+        email: m.email,
+        name: displayName,
+        activeDaysInPeriod,
+        lastActiveDay: agg?.lastActiveDay ?? null,
+        hadUsageRowsInPeriod: agg?.hadRows ?? false,
+      });
+      continue;
+    }
+
+    if (activeDaysInPeriod >= 1 && activeDaysInPeriod <= lowUsageMaxActiveDays) {
+      const a = agg ?? emptyUsageAgg();
+      lowUsage.push({
+        email: m.email,
+        name: displayName,
+        activeDaysInPeriod,
+        activityScore: activityScoreFromTotals(a),
+        acceptedLinesAdded: a.acceptedLinesAdded,
+        chatRequests: a.chatRequests,
+        composerRequests: a.composerRequests,
+        agentRequests: a.agentRequests,
+        totalTabsAccepted: a.totalTabsAccepted,
+        lastActiveDay: agg?.lastActiveDay ?? null,
+      });
+    }
   }
 
   inactive.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
+  lowUsage.sort(
+    (a, b) =>
+      a.activeDaysInPeriod - b.activeDaysInPeriod ||
+      a.activityScore - b.activityScore ||
+      a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  );
+
   return {
     inactive,
+    lowUsage,
     periodDays,
     periodStartMs,
     periodEndMs,
-    loginLookbackDays,
+    lowUsageMaxActiveDays,
     totalTeamMembersConsidered: activeMembers.length,
   };
 });

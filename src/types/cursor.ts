@@ -94,19 +94,35 @@ export interface InactiveCoworkerRow {
   activeDaysInPeriod: number;
   /** ISO date (YYYY-MM-DD) of last active day in the inactivity window, if any */
   lastActiveDay: string | null;
-  /** Most recent login event in the login lookback window */
-  lastLoginAt: string | null;
   /** False if the user had no daily-usage rows in the period (e.g. joined after range) */
   hadUsageRowsInPeriod: boolean;
+}
+
+/** Row for low-usage (may-cancel) list — sparse usage in the period */
+export interface LowUsageCoworkerRow {
+  email: string;
+  name: string;
+  activeDaysInPeriod: number;
+  /** Same weighting as leaderboard activity score (sum over period) */
+  activityScore: number;
+  acceptedLinesAdded: number;
+  chatRequests: number;
+  composerRequests: number;
+  agentRequests: number;
+  totalTabsAccepted: number;
+  lastActiveDay: string | null;
 }
 
 /** Server-computed bundle for the inactive coworkers admin page */
 export interface InactiveCoworkersSummary {
   inactive: InactiveCoworkerRow[];
+  /** Paid seats with 1..N active usage days in the period (candidates to review/cancel) */
+  lowUsage: LowUsageCoworkerRow[];
   periodDays: number;
   periodStartMs: number;
   periodEndMs: number;
-  loginLookbackDays: number;
+  /** Inclusive cap on active days for the low-usage list */
+  lowUsageMaxActiveDays: number;
   /** Members after excluding `isRemoved` */
   totalTeamMembersConsidered: number;
 }

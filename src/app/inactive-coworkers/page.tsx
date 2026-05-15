@@ -29,22 +29,21 @@ export default async function InactiveCoworkersPage() {
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Inactive coworkers</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Seat churn review</h1>
         <p className="text-muted-foreground text-sm mt-1 max-w-3xl">
-          Team members with <strong>no Cursor usage activity</strong> in the last {summary.periodDays} days (from daily
-          usage data). Use this list to notify people before canceling idle seats. Last login comes from audit logs
-          (last {summary.loginLookbackDays} days).{' '}
-          <strong>Unpaid Admin</strong> seats (Cursor role <code className="text-xs">free-owner</code>) are omitted — they
-          are not billable.
+          Two lists from Cursor <strong>daily usage</strong> over the last {summary.periodDays} days ({periodLabel}):
+          people with <strong>no</strong> active usage days, and people with <strong>low</strong> usage (between 1 and{' '}
+          {summary.lowUsageMaxActiveDays} active days). Use these to notify before canceling seats.{' '}
+          <strong>Unpaid Admin</strong> seats (role <code className="text-xs">free-owner</code>) are omitted.
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Summary</CardTitle>
+          <CardTitle>Inactive (zero active days)</CardTitle>
           <CardDescription>
-            Period: {periodLabel} · {summary.totalTeamMembersConsidered} active seats considered ·{' '}
-            <span className="font-medium text-foreground">{summary.inactive.length}</span> with zero active usage days
+            {summary.totalTeamMembersConsidered} billable seats considered ·{' '}
+            <span className="font-medium text-foreground">{summary.inactive.length}</span> with no active usage in period
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -53,16 +52,15 @@ export default async function InactiveCoworkersPage() {
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="text-right">Active days (period)</TableHead>
+                <TableHead className="text-right">Active days</TableHead>
                 <TableHead>Last active day</TableHead>
-                <TableHead>Last login (audit)</TableHead>
                 <TableHead>Usage data</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.inactive.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
                     Everyone had at least one active usage day in the last {summary.periodDays} days.
                   </TableCell>
                 </TableRow>
@@ -74,11 +72,6 @@ export default async function InactiveCoworkersPage() {
                     <TableCell className="text-right">{row.activeDaysInPeriod}</TableCell>
                     <TableCell>{row.lastActiveDay ?? '—'}</TableCell>
                     <TableCell>
-                      {row.lastLoginAt
-                        ? format(new Date(row.lastLoginAt), 'PPp')
-                        : `No login in last ${summary.loginLookbackDays}d`}
-                    </TableCell>
-                    <TableCell>
                       {row.hadUsageRowsInPeriod ? (
                         <Badge variant="secondary">Rows (all idle)</Badge>
                       ) : (
@@ -87,6 +80,61 @@ export default async function InactiveCoworkersPage() {
                     </TableCell>
                   </TableRow>
                 ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Low usage ({summary.lowUsageMaxActiveDays} active days or fewer)</CardTitle>
+          <CardDescription>
+            Has some activity but only{' '}
+            <strong>
+              1–{summary.lowUsageMaxActiveDays}
+            </strong>{' '}
+            days with <code className="text-xs">isActive</code> in the period — candidates to review before canceling.
+            Activity score uses the same weights as the leaderboard (sum over the window).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead className="text-right">Active days</TableHead>
+                <TableHead className="text-right">Score</TableHead>
+                <TableHead className="text-right">Acc. lines</TableHead>
+                <TableHead className="text-right">AI reqs</TableHead>
+                <TableHead className="text-right">Tab accepts</TableHead>
+                <TableHead>Last active day</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {summary.lowUsage.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
+                    No one had between 1 and {summary.lowUsageMaxActiveDays} active days in this period.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                summary.lowUsage.map((row) => {
+                  const aiReqs = row.chatRequests + row.composerRequests + row.agentRequests;
+                  return (
+                    <TableRow key={row.email}>
+                      <TableCell className="font-medium">{row.name}</TableCell>
+                      <TableCell>{row.email}</TableCell>
+                      <TableCell className="text-right">{row.activeDaysInPeriod}</TableCell>
+                      <TableCell className="text-right">{Math.round(row.activityScore).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{row.acceptedLinesAdded.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{aiReqs.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{row.totalTabsAccepted.toLocaleString()}</TableCell>
+                      <TableCell>{row.lastActiveDay ?? '—'}</TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

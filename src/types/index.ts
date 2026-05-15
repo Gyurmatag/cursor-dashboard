@@ -17,5 +17,6 @@ export type {
   AuditLogEvent,
   AuditLogsResponse,
   InactiveCoworkerRow,
+  LowUsageCoworkerRow,
   InactiveCoworkersSummary,
 } from './cursor';
