@@ -63,6 +63,7 @@ export const getTeamMembers = cache(async (): Promise<TeamMember[]> => {
       return {
         email: m.email,
         name: typeof m.name === 'string' ? m.name : '',
+        role: typeof m.role === 'string' ? m.role : undefined,
         isRemoved: Boolean(m.isRemoved ?? m.is_removed),
       };
     };
@@ -465,6 +466,16 @@ export async function getAllAICodeChanges(
 // Inactive coworkers (usage + audit login context)
 // ============================================================================
 
+/**
+ * Cursor "Unpaid Admin" / free-owner: not a billable seat (IT/finance admin only).
+ * @see https://cursor.com/docs/account/teams/members — excluded from seat-churn suggestions.
+ */
+function isUnpaidAdminTeamRole(role: string | undefined): boolean {
+  if (!role) return false;
+  const r = role.trim().toLowerCase().replace(/_/g, '-');
+  return r === 'free-owner' || r === 'unpaid-admin';
+}
+
 const MS_DAY = 86400000;
 const INACTIVE_USAGE_PAGE_SIZE = 1000;
 const AUDIT_PAGE_SIZE = 500;
@@ -625,7 +636,9 @@ export const getInactiveCoworkersSummary = cache(async (): Promise<InactiveCowor
   const usageRows = await fetchAllDailyUsageForAllMembers(periodStartMs, periodEndMs);
   const lastLoginByEmail = await buildLastLoginMap(loginLookbackDays);
 
-  const activeMembers = members.filter((m) => !m.isRemoved);
+  const activeMembers = members.filter(
+    (m) => !m.isRemoved && !isUnpaidAdminTeamRole(m.role)
+  );
 
   type UsageAgg = { activeDays: Set<string>; lastActiveDay: string | null; hadRows: boolean };
   const usageByEmail = new Map<string, UsageAgg>();

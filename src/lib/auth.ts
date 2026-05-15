@@ -3,11 +3,10 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/d1';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import * as authSchema from '@/db/auth-schema';
+import { isAdminEmail } from '@/lib/admin-emails';
 
 // Allowed email domain for authentication
 const ALLOWED_DOMAIN = 'shiwaforce.com';
-// Must match ADMIN_EMAIL in @/lib/admin (used only in user.create hook to set role)
-const ADMIN_EMAIL = 'gyorgy.varga@shiwaforce.com';
 
 /**
  * Creates a Better Auth instance with the D1 database
@@ -50,7 +49,7 @@ export async function createAuth() {
               throw new Error(`Only @${ALLOWED_DOMAIN} email addresses are allowed to sign in`);
             }
 
-            const role = email === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user';
+            const role = isAdminEmail(email) ? 'admin' : 'user';
             // Do not set teamId from user_team_override on first sign-in; leave team unchanged (user chooses on profile or admin assigns later).
             return { data: { ...user, role } };
           },

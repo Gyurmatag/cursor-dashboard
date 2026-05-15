@@ -33,7 +33,9 @@ export default async function InactiveCoworkersPage() {
         <p className="text-muted-foreground text-sm mt-1 max-w-3xl">
           Team members with <strong>no Cursor usage activity</strong> in the last {summary.periodDays} days (from daily
           usage data). Use this list to notify people before canceling idle seats. Last login comes from audit logs
-          (last {summary.loginLookbackDays} days).
+          (last {summary.loginLookbackDays} days).{' '}
+          <strong>Unpaid Admin</strong> seats (Cursor role <code className="text-xs">free-owner</code>) are omitted — they
+          are not billable.
         </p>
       </div>
 

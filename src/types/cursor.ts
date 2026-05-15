@@ -7,6 +7,8 @@
 export interface TeamMember {
   name: string;
   email: string;
+  /** Cursor team role, e.g. `member`, `owner`, `free-owner` (unpaid admin) */
+  role?: string;
   /** When true, member should be excluded from admin lists */
   isRemoved?: boolean;
 }
