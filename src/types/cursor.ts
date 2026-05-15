@@ -7,12 +7,19 @@
 export interface TeamMember {
   name: string;
   email: string;
+  /** When true, member should be excluded from admin lists */
+  isRemoved?: boolean;
 }
 
 // Daily Usage API Types
 export interface DailyUsageRecord {
+  /** Present on paginated responses */
+  userId?: number;
+  /** ISO date string, e.g. 2024-03-18 */
+  day?: string;
   date: number;
-  isActive: boolean;
+  /** Whether the user had activity that day (paginated all-members mode) */
+  isActive?: boolean;
   totalLinesAdded: number;
   totalLinesDeleted: number;
   acceptedLinesAdded: number;
@@ -33,8 +40,18 @@ export interface DailyUsageRecord {
   mostUsedModel: string;
   applyMostUsedExtension: string;
   tabMostUsedExtension: string;
-  clientVersion: string;
+  clientVersion: string | null;
   email: string;
+}
+
+export interface DailyUsagePaginationMeta {
+  page: number;
+  pageSize: number;
+  totalUsers?: number;
+  totalPages?: number;
+  totalCount?: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface DailyUsageResponse {
@@ -43,6 +60,53 @@ export interface DailyUsageResponse {
     startDate: number;
     endDate: number;
   };
+  pagination?: DailyUsagePaginationMeta;
+}
+
+/** Audit log entry from GET /teams/audit-logs */
+export interface AuditLogEvent {
+  event_id: string;
+  timestamp: string;
+  user_email: string;
+  event_type: string;
+  ip_address?: string;
+  event_data?: Record<string, unknown>;
+}
+
+export interface AuditLogsResponse {
+  events: AuditLogEvent[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    totalCount: number;
+    totalPages?: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+/** Row for inactive-coworkers admin view */
+export interface InactiveCoworkerRow {
+  email: string;
+  name: string;
+  activeDaysInPeriod: number;
+  /** ISO date (YYYY-MM-DD) of last active day in the inactivity window, if any */
+  lastActiveDay: string | null;
+  /** Most recent login event in the login lookback window */
+  lastLoginAt: string | null;
+  /** False if the user had no daily-usage rows in the period (e.g. joined after range) */
+  hadUsageRowsInPeriod: boolean;
+}
+
+/** Server-computed bundle for the inactive coworkers admin page */
+export interface InactiveCoworkersSummary {
+  inactive: InactiveCoworkerRow[];
+  periodDays: number;
+  periodStartMs: number;
+  periodEndMs: number;
+  loginLookbackDays: number;
+  /** Members after excluding `isRemoved` */
+  totalTeamMembersConsidered: number;
 }
 
 // Leaderboard Types

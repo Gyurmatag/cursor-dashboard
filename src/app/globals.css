@@ -198,21 +198,6 @@
   animation: particle-float 2s ease-in-out infinite;
 }
 
-/* Pulse Wave Animation for Pulse Icon */
-@keyframes pulse-wave {
-  0%, 100% {
-    stroke-dashoffset: 0;
-  }
-  50% {
-    stroke-dashoffset: 20;
-  }
-}
-
-.animate-pulse-wave {
-  stroke-dasharray: 40 20;
-  animation: pulse-wave 1.5s ease-in-out infinite;
-}
-
 /* Syntax Highlighting for Code Blocks */
 .hljs {
   @apply bg-transparent;

@@ -268,7 +268,7 @@ export async function fetchUserProfile(userEmail: string): Promise<UserProfileDa
         id: `${userEmail}-${record.date}`,
         userEmail,
         date: new Date(record.date).toISOString().split('T')[0],
-        isActive: record.isActive,
+        isActive: record.isActive ?? false,
         linesAdded: record.acceptedLinesAdded,
         agentRequests: record.agentRequests,
         chatRequests: record.chatRequests,

@@ -4,23 +4,34 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboardIcon, TableIcon, TrophyIcon, ActivityIcon, ShieldCheckIcon } from 'lucide-react';
+import {
+  LayoutDashboardIcon,
+  TableIcon,
+  TrophyIcon,
+  UserRoundXIcon,
+  ShieldCheckIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Hoist static navigation items outside component
-const navItems = [
+const baseNavItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboardIcon },
   { href: '/leaderboard', label: 'Leaderboard', icon: TableIcon },
   { href: '/achievements', label: 'Achievements', icon: TrophyIcon },
-  { href: '/chat', label: 'Pulse', icon: ActivityIcon },
 ] as const;
 
-const adminNavItem = { href: '/admin', label: 'Admin', icon: ShieldCheckIcon } as const;
+const adminNavItems = [
+  { href: '/inactive-coworkers', label: 'Inactive', icon: UserRoundXIcon },
+  { href: '/admin', label: 'Admin', icon: ShieldCheckIcon },
+] as const;
 
 interface NavLinksProps {
   variant?: 'desktop' | 'mobile';
   onNavigate?: () => void;
   showAdmin?: boolean;
+}
+
+function getItems(showAdmin: boolean) {
+  return showAdmin ? [...baseNavItems, ...adminNavItems] : baseNavItems;
 }
 
 /**
@@ -29,10 +40,6 @@ interface NavLinksProps {
  * Supports both desktop and mobile variants
  * Memoized to prevent unnecessary re-renders
  */
-function getItems(showAdmin: boolean) {
-  return showAdmin ? [...navItems, adminNavItem] : navItems;
-}
-
 export const NavLinks = React.memo(function NavLinks({ variant = 'desktop', onNavigate, showAdmin = false }: NavLinksProps) {
   const pathname = usePathname();
   const items = getItems(showAdmin);
