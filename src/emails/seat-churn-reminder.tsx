@@ -6,6 +6,7 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -13,6 +14,10 @@ import {
 } from '@react-email/components';
 
 export type SeatChurnVariant = 'inactive' | 'low-usage';
+
+/** Header logo from https://www.shiwaforce.com */
+const SHIWAFORCE_LOGO_URL =
+  'https://www.shiwaforce.com/wp-content/uploads/2024/06/shiva-feher-logo.svg';
 
 export interface SeatChurnReminderEmailProps {
   firstName: string;
@@ -60,7 +65,15 @@ export function SeatChurnReminderEmail(props: SeatChurnReminderEmailProps) {
       <Body style={main}>
         <Container style={container}>
           <Section style={header}>
-            <Text style={wordmark}>shiwa</Text>
+            <Link href="https://www.shiwaforce.com">
+              <Img
+                src={SHIWAFORCE_LOGO_URL}
+                alt="Shiwaforce"
+                width={122}
+                height={32}
+                style={logo}
+              />
+            </Link>
             <Text style={headerSubtitle}>Cursor Dashboard</Text>
           </Section>
 
@@ -118,29 +131,29 @@ const container: React.CSSProperties = {
 };
 
 const header: React.CSSProperties = {
-  marginBottom: '24px',
+  backgroundColor: '#212b36',
+  borderRadius: '16px 16px 0 0',
+  marginBottom: 0,
+  padding: '24px 28px 20px',
   textAlign: 'center' as const,
 };
 
-const wordmark: React.CSSProperties = {
-  color: colors.primary,
-  fontSize: '28px',
-  fontWeight: 700,
-  letterSpacing: '-0.02em',
-  margin: '0 0 4px',
-  textTransform: 'lowercase' as const,
+const logo: React.CSSProperties = {
+  display: 'inline-block',
+  margin: '0 auto',
 };
 
 const headerSubtitle: React.CSSProperties = {
-  color: colors.muted,
+  color: '#a8b0bc',
   fontSize: '13px',
-  margin: 0,
+  margin: '12px 0 0',
 };
 
 const card: React.CSSProperties = {
   backgroundColor: colors.card,
   border: `1px solid ${colors.border}`,
-  borderRadius: '16px',
+  borderRadius: '0 0 16px 16px',
+  borderTop: 'none',
   padding: '32px 28px',
 };
 
