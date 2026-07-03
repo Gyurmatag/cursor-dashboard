@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { PrivacyProvider } from "@/components/privacy-provider";
 import { AuthError } from "@/components/auth-error";
 import { BugReportButton } from "@/components/bug-report-button";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 // Force dynamic rendering for all pages since NavHeader needs session
@@ -63,6 +64,7 @@ export default function RootLayout({
 						</main>
 						{/* Floating bug report button - appears on all pages */}
 						<BugReportButton />
+						<Toaster richColors closeButton position="top-center" />
 					</PrivacyProvider>
 				</ThemeProvider>
 			</body>

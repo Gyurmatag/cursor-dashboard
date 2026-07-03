@@ -73,7 +73,16 @@
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
-  }
+  },
+
+  // Email Sending
+  // https://developers.cloudflare.com/email-service/
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["cursor-dashboard@shiwa.io"]
+    }
+  ]
 
   // Smart Placement (optional - uncomment to enable)
   // https://developers.cloudflare.com/workers/configuration/smart-placement/

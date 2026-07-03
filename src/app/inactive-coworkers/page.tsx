@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SendReminderButton } from '@/components/seat-churn/send-reminder-button';
+import { SendAllRemindersButton } from '@/components/seat-churn/send-all-reminders-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +27,8 @@ export default async function InactiveCoworkersPage() {
   const summary = await getInactiveCoworkersSummary();
 
   const periodLabel = `${format(summary.periodStartMs, 'PP')} – ${format(summary.periodEndMs, 'PP')}`;
+  const inactiveEmails = summary.inactive.map((row) => row.email);
+  const lowUsageEmails = summary.lowUsage.map((row) => row.email);
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
@@ -39,12 +43,15 @@ export default async function InactiveCoworkersPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Inactive (zero active days)</CardTitle>
-          <CardDescription>
-            {summary.totalTeamMembersConsidered} billable seats considered ·{' '}
-            <span className="font-medium text-foreground">{summary.inactive.length}</span> with no active usage in period
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>Inactive (zero active days)</CardTitle>
+            <CardDescription>
+              {summary.totalTeamMembersConsidered} billable seats considered ·{' '}
+              <span className="font-medium text-foreground">{summary.inactive.length}</span> with no active usage in period
+            </CardDescription>
+          </div>
+          <SendAllRemindersButton emails={inactiveEmails} variant="inactive" />
         </CardHeader>
         <CardContent>
           <Table>
@@ -55,12 +62,13 @@ export default async function InactiveCoworkersPage() {
                 <TableHead className="text-right">Active days</TableHead>
                 <TableHead>Last active day</TableHead>
                 <TableHead>Usage data</TableHead>
+                <TableHead>Reminder</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.inactive.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
                     Everyone had at least one active usage day in the last {summary.periodDays} days.
                   </TableCell>
                 </TableRow>
@@ -78,6 +86,9 @@ export default async function InactiveCoworkersPage() {
                         <Badge variant="outline">No rows</Badge>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <SendReminderButton email={row.email} variant="inactive" />
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -87,16 +98,19 @@ export default async function InactiveCoworkersPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Low usage ({summary.lowUsageMaxActiveDays} active days or fewer)</CardTitle>
-          <CardDescription>
-            Has some activity but only{' '}
-            <strong>
-              1–{summary.lowUsageMaxActiveDays}
-            </strong>{' '}
-            days with <code className="text-xs">isActive</code> in the period — candidates to review before canceling.
-            Activity score uses the same weights as the leaderboard (sum over the window).
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
+          <div className="space-y-1.5">
+            <CardTitle>Low usage ({summary.lowUsageMaxActiveDays} active days or fewer)</CardTitle>
+            <CardDescription>
+              Has some activity but only{' '}
+              <strong>
+                1–{summary.lowUsageMaxActiveDays}
+              </strong>{' '}
+              days with <code className="text-xs">isActive</code> in the period — candidates to review before canceling.
+              Activity score uses the same weights as the leaderboard (sum over the window).
+            </CardDescription>
+          </div>
+          <SendAllRemindersButton emails={lowUsageEmails} variant="low-usage" />
         </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
@@ -110,12 +124,13 @@ export default async function InactiveCoworkersPage() {
                 <TableHead className="text-right">AI reqs</TableHead>
                 <TableHead className="text-right">Tab accepts</TableHead>
                 <TableHead>Last active day</TableHead>
+                <TableHead>Reminder</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {summary.lowUsage.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-10">
                     No one had between 1 and {summary.lowUsageMaxActiveDays} active days in this period.
                   </TableCell>
                 </TableRow>
@@ -132,6 +147,9 @@ export default async function InactiveCoworkersPage() {
                       <TableCell className="text-right">{aiReqs.toLocaleString()}</TableCell>
                       <TableCell className="text-right">{row.totalTabsAccepted.toLocaleString()}</TableCell>
                       <TableCell>{row.lastActiveDay ?? '—'}</TableCell>
+                      <TableCell>
+                        <SendReminderButton email={row.email} variant="low-usage" />
+                      </TableCell>
                     </TableRow>
                   );
                 })
