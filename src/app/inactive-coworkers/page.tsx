@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { SendReminderButton } from '@/components/seat-churn/send-reminder-button';
 import { SendAllRemindersButton } from '@/components/seat-churn/send-all-reminders-button';
+import { SendTestReminderButton } from '@/components/seat-churn/send-test-reminder-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,14 +33,17 @@ export default async function InactiveCoworkersPage() {
 
   return (
     <div className="container mx-auto py-8 px-4 space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Seat churn review</h1>
-        <p className="text-muted-foreground text-sm mt-1 max-w-3xl">
-          Two lists from Cursor <strong>daily usage</strong> over the last {summary.periodDays} days ({periodLabel}):
-          people with <strong>no</strong> active usage days, and people with <strong>low</strong> usage (between 1 and{' '}
-          {summary.lowUsageMaxActiveDays} active days). Use these to notify before canceling seats.{' '}
-          <strong>Unpaid Admin</strong> seats (role <code className="text-xs">free-owner</code>) are omitted.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Seat churn review</h1>
+          <p className="text-muted-foreground text-sm mt-1 max-w-3xl">
+            Two lists from Cursor <strong>daily usage</strong> over the last {summary.periodDays} days ({periodLabel}):
+            people with <strong>no</strong> active usage days, and people with <strong>low</strong> usage (between 1 and{' '}
+            {summary.lowUsageMaxActiveDays} active days). Use these to notify before canceling seats.{' '}
+            <strong>Unpaid Admin</strong> seats (role <code className="text-xs">free-owner</code>) are omitted.
+          </p>
+        </div>
+        <SendTestReminderButton />
       </div>
 
       <Card>

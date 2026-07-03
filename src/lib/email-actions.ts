@@ -107,3 +107,43 @@ export async function sendSeatChurnReminders(
 
   return { sent, failed };
 }
+
+const TEST_RECIPIENT = 'gyorgy.varga@shiwaforce.com';
+
+export async function sendSeatChurnTestReminder(): Promise<void> {
+  if (!(await isAdmin())) {
+    throw new Error('Unauthorized');
+  }
+
+  const session = await getSession();
+  const adminEmail = session?.user?.email;
+  if (!adminEmail) {
+    throw new Error('Admin session required');
+  }
+
+  const summary = await getInactiveCoworkersSummary();
+  const dashboardUrl = getDashboardUrl();
+  const { env } = await getCloudflareContext();
+
+  const emailProps = {
+    firstName: 'György',
+    variant: 'inactive' as const,
+    periodDays: summary.periodDays,
+    activeDaysInPeriod: 0,
+    lastActiveDay: null,
+    dashboardUrl,
+  };
+
+  const html = await render(SeatChurnReminderEmail(emailProps));
+  const text = await render(SeatChurnReminderEmail(emailProps), { plainText: true });
+  const subject = `[Test] ${getSubject('inactive', emailProps.firstName)}`;
+
+  await sendSeatChurnEmailViaBinding(
+    env,
+    TEST_RECIPIENT,
+    adminEmail,
+    subject,
+    html,
+    text
+  );
+}
