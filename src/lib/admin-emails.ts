@@ -5,6 +5,7 @@
 export const ADMIN_EMAILS = [
   'gyorgy.varga@shiwaforce.com',
   'gabor.madi@shiwaforce.com',
+  'gabor.morvai@shiwaforce.com',
 ] as const;
 
 const ADMIN_EMAIL_SET = new Set(ADMIN_EMAILS.map((e) => e.toLowerCase()));

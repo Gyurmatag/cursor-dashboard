@@ -5,7 +5,7 @@ import { NavLinks } from '@/components/nav-links';
 import { MobileNav } from '@/components/mobile-nav';
 import { UserNav } from '@/components/user-nav';
 import { getSession } from '@/lib/auth-server';
-import { isAdminEmail } from '@/lib/admin-emails';
+import { isAdmin } from '@/lib/admin';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /**
@@ -22,7 +22,8 @@ export async function NavHeader() {
     image: session.user.image ?? null,
   } : null;
 
-  const showAdmin = isAdminEmail(session?.user?.email);
+  // Match admin page: allowlist email OR DB role === 'admin'
+  const showAdmin = await isAdmin();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
