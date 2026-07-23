@@ -3,7 +3,6 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { drizzle } from 'drizzle-orm/d1';
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import * as authSchema from '@/db/auth-schema';
-import { isAdminEmail } from '@/lib/admin-emails';
 
 // Allowed email domain for authentication
 const ALLOWED_DOMAIN = 'shiwaforce.com';
@@ -49,9 +48,8 @@ export async function createAuth() {
               throw new Error(`Only @${ALLOWED_DOMAIN} email addresses are allowed to sign in`);
             }
 
-            const role = isAdminEmail(email) ? 'admin' : 'user';
             // Do not set teamId from user_team_override on first sign-in; leave team unchanged (user chooses on profile or admin assigns later).
-            return { data: { ...user, role } };
+            return { data: { ...user, role: 'user' } };
           },
         },
       },
